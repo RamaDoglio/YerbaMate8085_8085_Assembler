@@ -66,8 +66,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            src-tauri/target/release/YerbaMate8085-Windows-x64_portable.exe
-            src-tauri/target/release/bundle/**/*
+            YerbaMate8085-Windows-x64_portable.exe
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/dmg/*.dmg
+          fail_on_unmatched_files: false
           name: YerbaMate8085 ${{ github.ref_name }}
           body: |
             Descargar el archivo correspondiente a tu sistema operativo.
