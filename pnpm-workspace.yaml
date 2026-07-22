@@ -1,3 +1,2 @@
-allowBuilds:
-  core-js: set this to true or false
-  sharp: true
+onlyBuiltDependencies:
+  - core-js
