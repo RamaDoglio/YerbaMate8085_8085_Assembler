@@ -1,0 +1,71 @@
+name: Build YerbaMate8085
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+            suffix: Windows-x64
+          - os: ubuntu-latest
+            target: linux
+            suffix: Linux-x64
+          - os: macos-latest
+            target: macos
+            suffix: macOS-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Linux system deps
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            rpm
+
+      - name: Build Tauri
+        run: pnpm tauri build
+
+      - name: Rename portable exe (Windows)
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          Rename-Item src-tauri/target/release/YerbaMate8085.exe YerbaMate8085-Windows-x64_portable.exe
+
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/YerbaMate8085-Windows-x64_portable.exe
+            src-tauri/target/release/bundle/**/*
+          name: YerbaMate8085 ${{ github.ref_name }}
+          body: |
+            Descargar el archivo correspondiente a tu sistema operativo.
+            Download the file for your operating system.
