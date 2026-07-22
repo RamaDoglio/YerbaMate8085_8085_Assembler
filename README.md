@@ -50,9 +50,9 @@ Simulador educativo del Intel 8085 con assembler, ejecución paso a paso y expor
 
 ## Downloads / Descargas
 
-Download the installer or portable version from [Releases](https://github.com/RamaDoglio/YerbaMate8085/releases).
+Download the installer or portable version from [Releases](https://github.com/RamaDoglio/YerbaMate8085_8085_Assembler/releases).
 
-Descargar el instalador o versión portable desde [Releases](https://github.com/RamaDoglio/YerbaMate8085/releases).
+Descargar el instalador o versión portable desde [Releases](https://github.com/RamaDoglio/YerbaMate8085_8085_Assembler/releases).
 
 ---
 
