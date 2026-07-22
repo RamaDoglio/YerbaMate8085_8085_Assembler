@@ -1,5 +1,5 @@
 packages:
   - "."
-onlyBuiltDependencies:
-  - core-js
-  - sharp
+allowBuilds:
+  core-js: true
+  sharp: true
