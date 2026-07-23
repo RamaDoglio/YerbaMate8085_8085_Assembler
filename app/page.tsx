@@ -12,19 +12,22 @@ import { ExportDialog } from '@/components/export-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { assemble, type AssemblerResult } from '@/lib/assembler-8085'
 import { CPU8085, type CPUState } from '@/lib/cpu-8085'
-import { EXAMPLE_PROGRAMS } from '@/lib/examples-8085'
+import { getExamples } from '@/lib/examples-8085'
 import { generatePDF, downloadBlob, type ExecutionStep } from '@/lib/pdf-generator'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
+import { useLanguage } from '@/lib/i18n'
 
 export default function SimulatorPage() {
+  const { t, locale } = useLanguage()
   const { toast } = useToast()
   const cpuRef = useRef<CPU8085 | null>(null)
   
-  const [code, setCode] = useState(EXAMPLE_PROGRAMS[0].code)
+  const [code, setCode] = useState(getExamples('es')[0].code)
+  const [selectedExampleIdx, setSelectedExampleIdx] = useState<number>(0)
   const [assemblerResult, setAssemblerResult] = useState<AssemblerResult | null>(null)
   const [cpuState, setCpuState] = useState<CPUState | null>(null)
   const [memory, setMemory] = useState<Uint8Array>(new Uint8Array(65536))
@@ -42,8 +45,12 @@ export default function SimulatorPage() {
     setMemory(cpuRef.current.getMemory())
   }, [])
 
+  useEffect(() => {
+    setCode(getExamples(locale)[selectedExampleIdx].code)
+  }, [locale, selectedExampleIdx])
+
   const handleAssemble = useCallback(() => {
-    const result = assemble(code)
+    const result = assemble(code, locale)
     setAssemblerResult(result)
 
     if (result.success) {
@@ -57,8 +64,8 @@ export default function SimulatorPage() {
       }
 
       toast({
-        title: 'Ensamblado exitoso',
-        description: `Generados ${result.machineCode.length} bytes de código máquina`,
+        title: t('page.assembleSuccess'),
+        description: t('page.assembleSuccessDesc', result.machineCode.length),
       })
 
       // Find the line for the current PC
@@ -70,12 +77,12 @@ export default function SimulatorPage() {
       }
     } else {
       toast({
-        title: 'Ensamblado fallido',
-        description: `${result.errors.length} error(es) encontrado(s)`,
+        title: t('page.assembleFailed'),
+        description: t('page.assembleFailedDesc', result.errors.length),
         variant: 'destructive',
       })
     }
-  }, [code, toast])
+  }, [code, toast, t, locale])
 
   const updateCurrentLine = useCallback(() => {
     if (!cpuRef.current || !assemblerResult) return
@@ -101,7 +108,7 @@ export default function SimulatorPage() {
 
     if (!result.success) {
       toast({
-        title: 'Error de ejecución',
+        title: t('page.runError'),
         description: result.error,
         variant: 'destructive',
       })
@@ -109,11 +116,11 @@ export default function SimulatorPage() {
 
     if (cpuRef.current.getState().halted) {
       toast({
-        title: 'Programa detenido',
-        description: 'La CPU ha llegado a una instrucción HLT',
+        title: t('page.programHalted'),
+        description: t('page.programHaltedDesc'),
       })
     }
-  }, [assemblerResult, toast, updateCurrentLine])
+  }, [assemblerResult, toast, updateCurrentLine, t])
 
   const handleRun = useCallback(() => {
     if (!cpuRef.current || isRunning) return
@@ -138,19 +145,19 @@ export default function SimulatorPage() {
 
         if (!result.success) {
           toast({
-            title: 'Error de ejecución',
+            title: t('page.runError'),
             description: result.error,
             variant: 'destructive',
           })
         } else {
           toast({
-            title: 'Programa detenido',
-            description: 'Ejecución completada',
+            title: t('page.programHalted'),
+            description: t('page.executionComplete'),
           })
         }
       }
-    }, 50) // Execute ~20 instructions per second for visibility
-  }, [isRunning, toast, updateCurrentLine])
+    }, 50)
+  }, [isRunning, toast, updateCurrentLine, t])
 
   const handleStop = useCallback(() => {
     if (runIntervalRef.current) {
@@ -268,29 +275,29 @@ export default function SimulatorPage() {
   const handleExportOnlyTemplate = useCallback(async () => {
     if (!assemblerResult?.success) return
     try {
-      const blob = generatePDF(assemblerResult.instructions, [], [], studentName.trim() || 'Sin nombre', '1', '1')
+      const blob = generatePDF(assemblerResult.instructions, [], [], studentName.trim() || t('page.unnamed'), '1', '1', locale)
       await downloadBlob(blob, 'Plantilla_Ejercicio.pdf')
       setDialogOpen(false)
-      toast({ title: 'Exportado', description: 'Plantilla generada correctamente' })
+      toast({ title: t('page.exported'), description: t('page.templateGenerated') })
     } catch (e) {
       console.error('Export error (template only):', e)
-      toast({ title: 'Error', description: 'No se pudo generar la plantilla', variant: 'destructive' })
+      toast({ title: t('page.error'), description: t('page.templateFailed'), variant: 'destructive' })
     }
-  }, [assemblerResult, studentName, toast])
+  }, [assemblerResult, studentName, toast, t, locale])
 
   const handleExportFull = useCallback(async () => {
     if (!assemblerResult?.success || !cpuRef.current) return
 
     try {
       const { steps, relevantMemory } = buildExecutionSteps()
-      const blob = generatePDF(assemblerResult.instructions, steps, relevantMemory, studentName.trim() || 'Sin nombre', '1', '1')
+      const blob = generatePDF(assemblerResult.instructions, steps, relevantMemory, studentName.trim() || t('page.unnamed'), '1', '1', locale)
       await downloadBlob(blob, 'Prueba_Escritorio_Ejercicio.pdf')
       setDialogOpen(false)
-      toast({ title: 'Exportado', description: 'PDF generado correctamente' })
+      toast({ title: t('page.exported'), description: t('page.pdfGenerated') })
     } catch (e) {
       console.error('Export error (full):', e)
     }
-  }, [assemblerResult, studentName, buildExecutionSteps, toast])
+  }, [assemblerResult, studentName, buildExecutionSteps, toast, t, locale])
 
   const handleLoad = useCallback(async () => {
     const path = await open({
@@ -363,20 +370,24 @@ export default function SimulatorPage() {
         <div className="flex w-1/2 flex-col border-r border-border">
           <div className="flex-shrink-0 border-b border-border px-4 py-2">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-medium text-muted-foreground">Código Assembler</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">{t('page.codeEditorTitle')}</h2>
               <Select
+                key={locale}
                 value=""
                 onValueChange={(value) => {
-                  const example = EXAMPLE_PROGRAMS.find(e => e.name === value)
-                  if (example) setCode(example.code)
+                  const idx = parseInt(value, 10)
+                  if (!isNaN(idx) && getExamples(locale)[idx]) {
+                    setSelectedExampleIdx(idx)
+                    setCode(getExamples(locale)[idx].code)
+                  }
                 }}
               >
                 <SelectTrigger className="h-7 w-44 text-xs">
-                  <SelectValue placeholder="Cargar ejemplo..." />
+                  <SelectValue placeholder={t('page.loadExample')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {EXAMPLE_PROGRAMS.map((ex) => (
-                    <SelectItem key={ex.name} value={ex.name} className="text-xs">
+                  {getExamples(locale).map((ex, idx) => (
+                    <SelectItem key={idx} value={String(idx)} className="text-xs">
                       {ex.name}
                     </SelectItem>
                   ))}
@@ -398,11 +409,11 @@ export default function SimulatorPage() {
         <div className="flex w-1/2 flex-col">
           <Tabs defaultValue="registers" className="flex h-full flex-col">
             <TabsList className="mx-2 mt-2 grid w-auto grid-cols-5">
-              <TabsTrigger value="registers">Registros</TabsTrigger>
-              <TabsTrigger value="memory">Memoria</TabsTrigger>
-              <TabsTrigger value="output">Salida</TabsTrigger>
-              <TabsTrigger value="io">E/S</TabsTrigger>
-              <TabsTrigger value="reference">Referencia</TabsTrigger>
+              <TabsTrigger value="registers">{t('page.tabRegisters')}</TabsTrigger>
+              <TabsTrigger value="memory">{t('page.tabMemory')}</TabsTrigger>
+              <TabsTrigger value="output">{t('page.tabOutput')}</TabsTrigger>
+              <TabsTrigger value="io">{t('page.tabIO')}</TabsTrigger>
+              <TabsTrigger value="reference">{t('page.tabReference')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="registers" className="flex-1 overflow-hidden p-2 mt-0">

@@ -1,5 +1,7 @@
 // Intel 8085 Instruction Set and Assembler
 
+import { translate, type Locale } from './i18n'
+
 export interface AssemblerError {
   line: number
   message: string
@@ -339,7 +341,7 @@ function parseNumber(str: string): number | null {
   return isNaN(dec) ? null : dec
 }
 
-export function assemble(sourceCode: string): AssemblerResult {
+export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerResult {
   const lines = sourceCode.split('\n')
   const errors: AssemblerError[] = []
   const symbols = new Map<string, number>()
@@ -373,7 +375,7 @@ export function assemble(sourceCode: string): AssemblerResult {
             hasOrg = true
           }
         } else {
-          errors.push({ line: lineNum, message: `Dirección ORG inválida: ${parts[1]}`, type: 'error' })
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidOrg', parts[1]), type: 'error' })
         }
       }
       continue
@@ -389,7 +391,7 @@ export function assemble(sourceCode: string): AssemblerResult {
     if (labelMatch) {
       const label = labelMatch[1].toUpperCase()
       if (symbols.has(label)) {
-        errors.push({ line: lineNum, message: `Etiqueta duplicada: ${label}`, type: 'error' })
+        errors.push({ line: lineNum, message: translate(locale, 'assembler.duplicateLabel', label), type: 'error' })
       } else {
         symbols.set(label, currentAddress)
       }
@@ -482,7 +484,7 @@ export function assemble(sourceCode: string): AssemblerResult {
     }
 
     if (!foundInstruction && line) {
-      errors.push({ line: lineNum, message: `Instrucción desconocida: ${line}`, type: 'error' })
+      errors.push({ line: lineNum, message: translate(locale, 'assembler.unknownInstruction', line), type: 'error' })
     }
   }
 
@@ -645,7 +647,7 @@ export function assemble(sourceCode: string): AssemblerResult {
           if (value !== undefined) {
             bytes.push(value & 0xFF)
           } else {
-            errors.push({ line: lineNum, message: `Valor inmediato inválido: ${operandStr}`, type: 'error' })
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidImmediate', operandStr), type: 'error' })
             bytes.push(0)
           }
         } else if (info.type === 'immediate16' || info.type === 'address') {
@@ -654,7 +656,7 @@ export function assemble(sourceCode: string): AssemblerResult {
             bytes.push(value & 0xFF)
             bytes.push((value >> 8) & 0xFF)
           } else {
-            errors.push({ line: lineNum, message: `Dirección/valor inválido: ${operandStr}`, type: 'error' })
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidAddress', operandStr), type: 'error' })
             bytes.push(0, 0)
           }
         }

@@ -4,9 +4,19 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { INSTRUCTION_CATEGORIES, type FlagEffect, type InstructionInfo } from '@/lib/instruction-set-data'
+import { getInstructionCategories, type FlagEffect, type InstructionInfo, type InstructionCategory } from '@/lib/instruction-set-data'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+
+function formatOpcode(opcode: string): string {
+  const parts = opcode.split(',')
+  if (parts.length <= 4) return opcode
+  const lines: string[] = []
+  for (let i = 0; i < parts.length; i += 4)
+    lines.push(parts.slice(i, i + 4).join(','))
+  return lines.join('\n')
+}
 
 function FlagBadge({ effect }: { effect: FlagEffect }) {
   const colorMap: Record<FlagEffect, string> = {
@@ -33,11 +43,11 @@ function FlagBadge({ effect }: { effect: FlagEffect }) {
 function InstructionRow({ inst, isHighlighted }: { inst: InstructionInfo; isHighlighted: boolean }) {
   return (
     <div className={cn(
-      'grid grid-cols-[120px_50px_40px_40px_1fr] gap-1 rounded px-2 py-1.5 text-xs items-start',
+      'grid grid-cols-[120px_80px_40px_40px_1fr] gap-1 rounded px-2 py-1.5 text-xs items-start',
       isHighlighted && 'bg-primary/10'
     )}>
       <span className="font-mono font-semibold text-[var(--code-instruction)]">{inst.mnemonic}</span>
-      <span className="font-mono text-muted-foreground">{inst.opcode}</span>
+      <span className="font-mono text-muted-foreground whitespace-pre-line">{formatOpcode(inst.opcode)}</span>
       <span className="font-mono text-muted-foreground text-center">{inst.bytes}</span>
       <span className="font-mono text-muted-foreground text-center">{inst.cycles}</span>
       <span className="text-muted-foreground leading-tight">{inst.description}</span>
@@ -46,9 +56,10 @@ function InstructionRow({ inst, isHighlighted }: { inst: InstructionInfo; isHigh
 }
 
 function FlagRow({ inst }: { inst: InstructionInfo }) {
+  const { t } = useLanguage()
   return (
     <div className="flex items-center gap-1.5 px-2 pb-1.5">
-      <span className="text-[10px] text-muted-foreground w-20">Banderas:</span>
+      <span className="text-[10px] text-muted-foreground w-20">{t('instructionReference.flagsLabel')}</span>
       <div className="flex items-center gap-1">
         <span className="text-[10px] text-muted-foreground">Z</span>
         <FlagBadge effect={inst.flags.Z} />
@@ -70,11 +81,11 @@ function FlagRow({ inst }: { inst: InstructionInfo }) {
         <FlagBadge effect={inst.flags.AC} />
       </div>
       <span className="text-[10px] text-muted-foreground ml-2">
-        Modo: {inst.addressing}
+        {t('instructionReference.modeLabel')} {inst.addressing}
       </span>
       {inst.example && (
         <span className="text-[10px] text-muted-foreground ml-2 font-mono">
-          Ej: {inst.example}
+          {t('instructionReference.exampleLabel')} {inst.example}
         </span>
       )}
     </div>
@@ -86,10 +97,11 @@ function CategorySection({
   defaultOpen,
   searchTerm,
 }: {
-  category: typeof INSTRUCTION_CATEGORIES[0]
+  category: InstructionCategory
   defaultOpen: boolean
   searchTerm: string
 }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(defaultOpen)
 
   const filtered = category.instructions.filter(
@@ -115,12 +127,12 @@ function CategorySection({
       {open && (
         <div className="border-t border-border px-1 py-1">
           {/* Header */}
-          <div className="grid grid-cols-[120px_50px_40px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium">
-            <span>Instrucción</span>
-            <span>Opcode</span>
-            <span className="text-center">Bytes</span>
-            <span className="text-center">T-estados</span>
-            <span>Descripción</span>
+          <div className="grid grid-cols-[120px_80px_40px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium">
+            <span>{t('instructionReference.colInstruction')}</span>
+            <span>{t('instructionReference.colOpcode')}</span>
+            <span className="text-center">{t('instructionReference.colBytes')}</span>
+            <span className="text-center">{t('instructionReference.colCycles')}</span>
+            <span>{t('instructionReference.colDescription')}</span>
           </div>
           {displayInstructions.map((inst, i) => (
             <div key={i}>
@@ -136,20 +148,21 @@ function CategorySection({
 }
 
 function FlagLegend() {
-  const items: { effect: FlagEffect; label: string }[] = [
-    { effect: 'affected', label: 'Afectada' },
-    { effect: 'unaffected', label: 'No afectada' },
-    { effect: 'set', label: 'Puesta a 1' },
-    { effect: 'reset', label: 'Puesta a 0' },
-    { effect: 'modified', label: 'Modificada' },
+  const { t } = useLanguage()
+  const items: { effect: FlagEffect; key: string }[] = [
+    { effect: 'affected', key: 'flagAffected' },
+    { effect: 'unaffected', key: 'flagNotAffected' },
+    { effect: 'set', key: 'flagSet' },
+    { effect: 'reset', key: 'flagReset' },
+    { effect: 'modified', key: 'flagModified' },
   ]
   return (
     <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
-      <span className="font-medium">Leyenda de Banderas:</span>
+      <span className="font-medium">{t('instructionReference.legendTitle')}</span>
       {items.map((item) => (
         <div key={item.effect} className="flex items-center gap-1">
           <FlagBadge effect={item.effect} />
-          <span>{item.label}</span>
+          <span>{t(`instructionReference.${item.key}`)}</span>
         </div>
       ))}
     </div>
@@ -157,13 +170,14 @@ function FlagLegend() {
 }
 
 export function InstructionReference({ className }: { className?: string }) {
+  const { t, locale } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
 
   return (
     <Card className={cn('flex flex-col bg-card', className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
-          Referencia del Set de Instrucciones 8085
+          {t('instructionReference.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-4">
@@ -172,7 +186,7 @@ export function InstructionReference({ className }: { className?: string }) {
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar instrucciones..."
+              placeholder={t('instructionReference.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="h-8 pl-8 text-xs font-mono"
@@ -185,11 +199,11 @@ export function InstructionReference({ className }: { className?: string }) {
           {/* Categories */}
           <ScrollArea className="flex-1 min-h-0 -mx-4 px-4">
             <div className="space-y-2 pb-4">
-              {INSTRUCTION_CATEGORIES.map((cat) => (
+              {getInstructionCategories(locale).map((cat, idx) => (
                 <CategorySection
-                  key={cat.name}
+                  key={idx}
                   category={cat}
-                  defaultOpen={!searchTerm && cat.name === 'Data Transfer'}
+                  defaultOpen={!searchTerm && idx === 0}
                   searchTerm={searchTerm}
                 />
               ))}

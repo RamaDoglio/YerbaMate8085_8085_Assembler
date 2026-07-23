@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
+import { useLanguage } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd } from '@/components/ui/kbd'
@@ -16,13 +17,15 @@ import {
   Cpu,
   Sun,
   Moon,
-  FileDown
+  FileDown,
+  Languages
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     setMounted(true)
@@ -36,13 +39,37 @@ function ThemeToggle() {
       size="sm"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className="h-8 w-8 p-0"
-      aria-label="Cambiar tema"
+      aria-label={t('toolbar.themeLabel')}
     >
       {mounted ? (
         isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />
       ) : (
         <Sun className="h-4 w-4" />
       )}
+    </Button>
+  )
+}
+
+function LanguageToggle() {
+  const { locale, setLocale } = useLanguage()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return <div className="h-8 w-8" />
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+      className="h-8 w-auto px-2 gap-1 font-semibold text-xs"
+      aria-label={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+    >
+      <Languages className="h-4 w-4" />
+      {locale === 'es' ? 'EN' : 'ES'}
     </Button>
   )
 }
@@ -74,6 +101,8 @@ export function SimulatorToolbar({
   isAssembled,
   className
 }: SimulatorToolbarProps) {
+  const { t } = useLanguage()
+
   return (
     <div className={cn(
       'flex items-center gap-2 p-2 border-b border-border bg-card/50',
@@ -82,7 +111,7 @@ export function SimulatorToolbar({
       {/* Logo */}
       <div className="flex items-center gap-2 px-2">
         <Cpu className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm">Simulador 8085</span>
+        <span className="font-semibold text-sm">{t('toolbar.simulatorTitle')}</span>
       </div>
 
       <div className="h-6 w-px bg-border mx-2" />
@@ -93,11 +122,11 @@ export function SimulatorToolbar({
           <TooltipTrigger asChild>
             <Button variant="ghost" size="sm" onClick={onLoad} className="h-8 gap-2">
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Abrir</span>
+              <span className="hidden sm:inline">{t('toolbar.open')}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            Abrir programa <Kbd>Ctrl+O</Kbd>
+            {t('toolbar.openTooltip')} <Kbd>Ctrl+O</Kbd>
           </TooltipContent>
         </Tooltip>
       )}
@@ -106,11 +135,11 @@ export function SimulatorToolbar({
           <TooltipTrigger asChild>
             <Button variant="ghost" size="sm" onClick={onSave} className="h-8 gap-2">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Guardar</span>
+              <span className="hidden sm:inline">{t('toolbar.save')}</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            Guardar programa <Kbd>Ctrl+S</Kbd>
+            {t('toolbar.saveTooltip')} <Kbd>Ctrl+S</Kbd>
           </TooltipContent>
         </Tooltip>
       )}
@@ -127,17 +156,17 @@ export function SimulatorToolbar({
             className="h-8 gap-2 bg-primary hover:bg-primary/90"
           >
             <Hammer className="h-4 w-4" />
-            <span>Ensamblar</span>
+            <span>{t('toolbar.assemble')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Ensamblar código <Kbd>F7</Kbd> <span className="text-muted-foreground">o</span> <Kbd>Ctrl+Shift+A</Kbd>
+          {t('toolbar.assembleTooltip')} <Kbd>F7</Kbd> <span className="text-muted-foreground">{t('toolbar.or')}</span> <Kbd>Ctrl+Shift+A</Kbd>
         </TooltipContent>
       </Tooltip>
 
       <div className="h-6 w-px bg-border mx-2" />
 
-      {/* Controles de ejecución */}
+      {/* Execution controls */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -148,11 +177,11 @@ export function SimulatorToolbar({
             className="h-8 gap-2"
           >
             <Play className="h-4 w-4" />
-            <span className="hidden sm:inline">Ejecutar</span>
+            <span className="hidden sm:inline">{t('toolbar.run')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Ejecutar programa <Kbd>F5</Kbd>
+          {t('toolbar.runTooltip')} <Kbd>F5</Kbd>
         </TooltipContent>
       </Tooltip>
 
@@ -166,11 +195,11 @@ export function SimulatorToolbar({
             className="h-8 gap-2"
           >
             <SkipForward className="h-4 w-4" />
-            <span className="hidden sm:inline">Paso</span>
+            <span className="hidden sm:inline">{t('toolbar.step')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Ejecutar una instrucción <Kbd>F10</Kbd>
+          {t('toolbar.stepTooltip')} <Kbd>F10</Kbd>
         </TooltipContent>
       </Tooltip>
 
@@ -184,11 +213,11 @@ export function SimulatorToolbar({
             className="h-8 gap-2"
           >
             <Square className="h-4 w-4" />
-            <span className="hidden sm:inline">Detener</span>
+            <span className="hidden sm:inline">{t('toolbar.stop')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Detener ejecución
+          {t('toolbar.stopTooltip')}
         </TooltipContent>
       </Tooltip>
 
@@ -203,11 +232,11 @@ export function SimulatorToolbar({
             className="h-8 gap-2 text-destructive hover:text-destructive"
           >
             <RotateCcw className="h-4 w-4" />
-            <span className="hidden sm:inline">Reiniciar</span>
+            <span className="hidden sm:inline">{t('toolbar.reset')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Reiniciar CPU <Kbd>Ctrl+Shift+R</Kbd>
+          {t('toolbar.resetTooltip')} <Kbd>Ctrl+Shift+R</Kbd>
         </TooltipContent>
       </Tooltip>
 
@@ -224,11 +253,11 @@ export function SimulatorToolbar({
             className="h-8 gap-2"
           >
             <FileDown className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar PDF</span>
+            <span className="hidden sm:inline">{t('toolbar.exportPdf')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          Exportar plantilla y prueba de escritorio (.pdf)
+          {t('toolbar.exportPdfTooltip')}
         </TooltipContent>
       </Tooltip>
 
@@ -238,10 +267,13 @@ export function SimulatorToolbar({
           'h-2 w-2 rounded-full',
           isRunning ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30'
         )} />
-        <span>{isRunning ? 'Ejecutando' : 'Listo'}</span>
+        <span>{isRunning ? t('toolbar.statusRunning') : t('toolbar.statusReady')}</span>
       </div>
 
       <div className="h-6 w-px bg-border mx-2" />
+
+      {/* Language toggle */}
+      <LanguageToggle />
 
       {/* Theme toggle */}
       <ThemeToggle />

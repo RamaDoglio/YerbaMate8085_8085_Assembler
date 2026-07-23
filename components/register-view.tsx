@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { CPUState } from '@/lib/cpu-8085'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 interface RegisterViewProps {
@@ -65,17 +66,18 @@ function FlagItem({ name, value, description }: { name: string; value: boolean; 
 }
 
 export function RegisterView({ state, className }: RegisterViewProps) {
+  const { t } = useLanguage()
   return (
     <Card className={cn('bg-card', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground">
-          Registros de la CPU
+          {t('registerView.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 8-bit Registers */}
         <div className="space-y-1">
-          <h4 className="text-xs font-medium text-muted-foreground mb-2">Registros de 8 bits</h4>
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">{t('registerView.reg8bit')}</h4>
           <div className="grid gap-1">
             <RegisterItem name="A" value={state.A} />
             <RegisterItem name="B" value={state.B} />
@@ -89,7 +91,7 @@ export function RegisterView({ state, className }: RegisterViewProps) {
 
         {/* 16-bit Registers */}
         <div className="space-y-1">
-          <h4 className="text-xs font-medium text-muted-foreground mb-2">Registros de 16 bits</h4>
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">{t('registerView.reg16bit')}</h4>
           <div className="grid gap-1">
             <RegisterItem name="PC" value={state.PC} bits={16} highlight />
             <RegisterItem name="SP" value={state.SP} bits={16} />
@@ -98,7 +100,7 @@ export function RegisterView({ state, className }: RegisterViewProps) {
 
         {/* Register Pairs */}
         <div className="space-y-1">
-          <h4 className="text-xs font-medium text-muted-foreground mb-2">Pares de Registros</h4>
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">{t('registerView.registerPairs')}</h4>
           <div className="grid gap-1">
             <RegisterItem name="BC" value={(state.B << 8) | state.C} bits={16} />
             <RegisterItem name="DE" value={(state.D << 8) | state.E} bits={16} />
@@ -108,46 +110,46 @@ export function RegisterView({ state, className }: RegisterViewProps) {
 
         {/* Flags */}
         <div className="space-y-1">
-          <h4 className="text-xs font-medium text-muted-foreground mb-2">Banderas (PSW)</h4>
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">{t('registerView.flags')}</h4>
           <div className="grid grid-cols-5 gap-2">
-            <FlagItem name="S" value={state.flags.S} description="Flag de Signo" />
-            <FlagItem name="Z" value={state.flags.Z} description="Flag de Cero" />
-            <FlagItem name="AC" value={state.flags.AC} description="Flag de Acarreo Auxiliar" />
-            <FlagItem name="P" value={state.flags.P} description="Flag de Paridad" />
-            <FlagItem name="CY" value={state.flags.CY} description="Flag de Acarreo" />
+            <FlagItem name="S" value={state.flags.S} description={t('registerView.flagS')} />
+            <FlagItem name="Z" value={state.flags.Z} description={t('registerView.flagZ')} />
+            <FlagItem name="AC" value={state.flags.AC} description={t('registerView.flagAC')} />
+            <FlagItem name="P" value={state.flags.P} description={t('registerView.flagP')} />
+            <FlagItem name="CY" value={state.flags.CY} description={t('registerView.flagCY')} />
           </div>
         </div>
 
         {/* Status */}
         <div className="space-y-1">
-          <h4 className="text-xs font-medium text-muted-foreground mb-2">Estado</h4>
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">{t('registerView.status')}</h4>
           <div className="flex flex-wrap gap-2">
             <div className={cn(
               'rounded-full px-3 py-1 text-xs font-medium',
               state.halted ? 'bg-destructive/20 text-destructive' : 'bg-green-500/20 text-green-500'
             )}>
-              {state.halted ? 'DETENIDA' : 'EJECUTANDO'}
+              {state.halted ? t('registerView.halted') : t('registerView.running')}
             </div>
             <div className={cn(
               'rounded-full px-3 py-1 text-xs font-medium',
               state.interruptEnabled ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
             )}>
-              INT: {state.interruptEnabled ? 'ACT' : 'DES'}
+              INT: {state.interruptEnabled ? t('registerView.intOn') : t('registerView.intOff')}
             </div>
             <div className={cn(
               'rounded-full px-3 py-1 text-xs font-medium',
               state.serialInputData ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
             )}>
-              ENT.SERIE: {state.serialInputData ? '1' : '0'}
+              {t('registerView.serialIn')}: {state.serialInputData ? '1' : '0'}
             </div>
             <div className={cn(
               'rounded-full px-3 py-1 text-xs font-medium',
               state.serialOutputData ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
             )}>
-              SAL.SERIE: {state.serialOutputData ? '1' : '0'}
+              {t('registerView.serialOut')}: {state.serialOutputData ? '1' : '0'}
             </div>
             <div className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-              MASCARA: {state.interruptMask.toString(2).padStart(3, '0')}
+              {t('registerView.mask')}: {state.interruptMask.toString(2).padStart(3, '0')}
             </div>
           </div>
         </div>

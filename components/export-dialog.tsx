@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useLanguage } from '@/lib/i18n'
 
 interface ExportDialogProps {
   open: boolean
@@ -34,6 +35,7 @@ export function ExportDialog({
   onExportFull,
   disabled,
 }: ExportDialogProps) {
+  const { t } = useLanguage()
   const [nameError, setNameError] = useState(false)
 
   const validateName = () => {
@@ -64,18 +66,18 @@ export function ExportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl" showCloseButton>
         <DialogHeader>
-          <DialogTitle>Exportar a PDF</DialogTitle>
+          <DialogTitle>{t('exportDialog.title')}</DialogTitle>
           <DialogDescription>
-            Complete los datos para generar el documento.
+            {t('exportDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <Label htmlFor="student-name">Nombre del alumno</Label>
+            <Label htmlFor="student-name">{t('exportDialog.studentNameLabel')}</Label>
             <Input
               id="student-name"
-              placeholder="Ingrese su nombre..."
+              placeholder={t('exportDialog.studentNamePlaceholder')}
               value={studentName}
               onChange={(e) => {
                 onStudentNameChange(e.target.value)
@@ -85,16 +87,16 @@ export function ExportDialog({
             />
             {nameError && (
               <p className="text-xs text-destructive">
-                Debe ingresar un nombre para continuar.
+                {t('exportDialog.nameRequired')}
               </p>
             )}
           </div>
 
           {!hasStepped && (
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              <p className="font-medium">No se ha ejecutado el programa paso a paso.</p>
+              <p className="font-medium">{t('exportDialog.noStepWarning')}</p>
               <p className="mt-1">
-                Para guardar la prueba de escritorio, seleccione una de las opciones de abajo.
+                {t('exportDialog.stepHint')}
               </p>
             </div>
           )}
@@ -109,9 +111,9 @@ export function ExportDialog({
                 onClick={handleFull}
                 disabled={disabled}
               >
-                <span>Guardar Plantilla y Prueba de Escritorio</span>
+                <span>{t('exportDialog.saveFull')}</span>
                 <span className="text-xs opacity-70 font-normal">
-                  (Se ejecutará automáticamente paso a paso)
+                  {t('exportDialog.saveFullHint')}
                 </span>
               </Button>
               <Button
@@ -120,14 +122,14 @@ export function ExportDialog({
                 onClick={handleOnlyTemplate}
                 disabled={disabled}
               >
-                Guardar solo Plantilla del Código
+                {t('exportDialog.saveTemplateOnly')}
               </Button>
               <Button
                 variant="ghost"
                 className="w-full"
                 onClick={handleClose}
               >
-                Cancelar
+                {t('exportDialog.cancel')}
               </Button>
             </>
           ) : (
@@ -138,14 +140,14 @@ export function ExportDialog({
                 onClick={handleFull}
                 disabled={disabled}
               >
-                Exportar PDF
+                {t('exportDialog.exportPdf')}
               </Button>
               <Button
                 variant="ghost"
                 className="w-full"
                 onClick={handleClose}
               >
-                Cancelar
+                {t('exportDialog.cancel')}
               </Button>
             </>
           )}

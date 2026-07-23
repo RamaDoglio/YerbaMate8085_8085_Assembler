@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 interface IOViewProps {
@@ -14,6 +15,7 @@ interface IOViewProps {
 }
 
 export function IOView({ outputPorts, onSetInputPort, className }: IOViewProps) {
+  const { t } = useLanguage()
   const [portAddress, setPortAddress] = useState('')
   const [portValue, setPortValue] = useState('')
   const [newPort, setNewPort] = useState('')
@@ -37,16 +39,16 @@ export function IOView({ outputPorts, onSetInputPort, className }: IOViewProps) 
     <Card className={cn('flex flex-col bg-card', className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
-          Puertos E/S
+          {t('ioView.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-4 space-y-4">
         {/* Set Input Port */}
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground">Configurar Puerto de Entrada (para IN)</h4>
+          <h4 className="text-xs font-medium text-muted-foreground">{t('ioView.inputConfig')}</h4>
           <div className="flex items-center gap-2">
             <Input
-              placeholder="Puerto (hex)"
+              placeholder={t('ioView.portPlaceholder')}
               value={portAddress}
               onChange={(e) => setPortAddress(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === 'Enter' && handleSetInput()}
@@ -54,14 +56,14 @@ export function IOView({ outputPorts, onSetInputPort, className }: IOViewProps) 
             />
             <span className="text-xs text-muted-foreground">=</span>
             <Input
-              placeholder="Valor (hex)"
+              placeholder={t('ioView.valuePlaceholder')}
               value={portValue}
               onChange={(e) => setPortValue(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === 'Enter' && handleSetInput()}
               className="h-8 w-24 font-mono text-xs"
             />
             <Button variant="secondary" size="sm" onClick={handleSetInput} className="h-8">
-              Asignar
+              {t('ioView.assign')}
             </Button>
           </div>
         </div>
@@ -70,13 +72,13 @@ export function IOView({ outputPorts, onSetInputPort, className }: IOViewProps) 
 
         {/* Output Ports Table */}
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground">Puertos de Salida (de instrucción OUT)</h4>
+          <h4 className="text-xs font-medium text-muted-foreground">{t('ioView.outputTitle')}</h4>
           {entries.length > 0 ? (
             <div className="font-mono text-xs space-y-0.5">
                   <div className="flex border-b border-border pb-1 mb-1 text-muted-foreground">
-                    <div className="w-24">Puerto</div>
-                    <div className="w-16">Valor</div>
-                    <div className="w-16">Binario</div>
+                    <div className="w-24">{t('ioView.colPort')}</div>
+                    <div className="w-16">{t('ioView.colValue')}</div>
+                    <div className="w-16">{t('ioView.colBinary')}</div>
                   </div>
               <ScrollArea className="h-[200px]">
                 {entries.map(({ port, value }) => (
@@ -96,7 +98,7 @@ export function IOView({ outputPorts, onSetInputPort, className }: IOViewProps) 
             </div>
           ) : (
             <div className="text-center text-muted-foreground text-xs py-4">
-              Aún no se han escrito puertos. Usa la instrucción OUT para escribir en un puerto.
+              {t('ioView.emptyState')}
             </div>
           )}
         </div>

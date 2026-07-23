@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 
@@ -20,6 +21,7 @@ const BYTES_PER_ROW = 16
 const BYTES_PER_PAGE = ROWS_PER_PAGE * BYTES_PER_ROW // 256 bytes per page
 
 export function MemoryView({ memory, pc, sp, className, onMemoryChange }: MemoryViewProps) {
+  const { t } = useLanguage()
   const [page, setPage] = useState(0)
   const [gotoAddress, setGotoAddress] = useState('')
   const [editingCell, setEditingCell] = useState<number | null>(null)
@@ -98,7 +100,7 @@ export function MemoryView({ memory, pc, sp, className, onMemoryChange }: Memory
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Memoria
+            {t('memoryView.title')}
           </CardTitle>
           <div className="flex items-center gap-2">
               <Button 
@@ -107,7 +109,7 @@ export function MemoryView({ memory, pc, sp, className, onMemoryChange }: Memory
               onClick={goToPC}
               className="h-7 text-xs"
             >
-              Ir a PC
+              {t('memoryView.goToPC')}
             </Button>
             <Button 
               variant="outline" 
@@ -115,20 +117,20 @@ export function MemoryView({ memory, pc, sp, className, onMemoryChange }: Memory
               onClick={goToSP}
               className="h-7 text-xs"
             >
-              Ir a SP
+              {t('memoryView.goToSP')}
             </Button>
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2">
           <Input
-            placeholder="Dirección (hex)"
+            placeholder={t('memoryView.addressPlaceholder')}
             value={gotoAddress}
             onChange={(e) => setGotoAddress(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === 'Enter' && handleGoto()}
             className="h-8 w-24 font-mono text-xs"
           />
           <Button variant="secondary" size="sm" onClick={handleGoto} className="h-8">
-            Ir
+            {t('memoryView.go')}
           </Button>
           <div className="ml-auto flex items-center gap-1">
             <Button
@@ -178,7 +180,7 @@ export function MemoryView({ memory, pc, sp, className, onMemoryChange }: Memory
         <div className="font-mono text-xs">
           {/* Header */}
           <div className="flex border-b border-border pb-1 mb-1 sticky top-0 bg-card">
-            <div className="w-16 text-muted-foreground font-medium">Direc</div>
+            <div className="w-16 text-muted-foreground font-medium">{t('memoryView.colAddress')}</div>
             <div className="flex-1 flex">
               {Array.from({ length: BYTES_PER_ROW }, (_, i) => (
                 <div key={i} className="w-6 text-center text-muted-foreground font-medium">
@@ -186,7 +188,7 @@ export function MemoryView({ memory, pc, sp, className, onMemoryChange }: Memory
                 </div>
               ))}
             </div>
-            <div className="w-36 pl-2 text-muted-foreground font-medium">ASCII</div>
+            <div className="w-36 pl-2 text-muted-foreground font-medium">{t('memoryView.ascii')}</div>
           </div>
 
           {/* Memory rows */}

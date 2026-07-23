@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { AssembledInstruction, AssemblerError } from '@/lib/assembler-8085'
+import { useLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { AlertCircle, AlertTriangle } from 'lucide-react'
 
@@ -21,11 +22,12 @@ export function MachineCodeView({
   currentPC,
   className 
 }: MachineCodeViewProps) {
+  const { t } = useLanguage()
   return (
     <Card className={cn('flex flex-col bg-card', className)}>
       <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Código Ensamblado
+            {t('machineCodeView.title')}
           </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-0 overflow-hidden">
@@ -50,7 +52,7 @@ export function MachineCodeView({
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     )}
                     <span>
-                      Línea {error.line}: {error.message}
+                      {t('machineCodeView.line')} {error.line}: {error.message}
                     </span>
                   </div>
                 ))}
@@ -60,7 +62,7 @@ export function MachineCodeView({
             {/* Symbol Table */}
             {symbols.size > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">Símbolos</h4>
+                <h4 className="text-xs font-medium text-muted-foreground">{t('machineCodeView.symbols')}</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-md bg-muted/30 p-3">
                   {Array.from(symbols.entries()).map(([name, value]) => (
                     <div key={name} className="flex justify-between font-mono text-xs">
@@ -77,14 +79,14 @@ export function MachineCodeView({
             {/* Instructions */}
             {instructions.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">Código Máquina</h4>
+                <h4 className="text-xs font-medium text-muted-foreground">{t('machineCodeView.machineCode')}</h4>
                 <div className="font-mono text-xs space-y-0.5">
                   {/* Header */}
                     <div className="flex border-b border-border pb-1 mb-1 text-muted-foreground">
-                      <div className="w-12">Direc</div>
-                      <div className="w-24">Bytes</div>
-                      <div className="w-12">Línea</div>
-                      <div className="flex-1">Origen</div>
+                      <div className="w-12">{t('machineCodeView.colAddress')}</div>
+                      <div className="w-24">{t('machineCodeView.colBytes')}</div>
+                      <div className="w-12">{t('machineCodeView.colLine')}</div>
+                      <div className="flex-1">{t('machineCodeView.colSource')}</div>
                     </div>
 
                   {instructions.map((inst, i) => {
@@ -124,7 +126,7 @@ export function MachineCodeView({
 
             {instructions.length === 0 && errors.length === 0 && (
               <div className="text-center text-muted-foreground text-sm py-8">
-                Aún no hay código ensamblado. Haz clic en &quot;Ensamblar&quot; para compilar tu código.
+                {t('machineCodeView.emptyState')}
               </div>
             )}
           </div>
