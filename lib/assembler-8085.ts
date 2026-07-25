@@ -316,6 +316,11 @@ const INSTRUCTIONS: Record<string, { opcode: number; bytes: number; type: string
   'SIM': { opcode: 0x30, bytes: 1, type: 'simple' },
 }
 
+const JUMP_CALL_MNEMONICS = new Set([
+  'JMP', 'JZ', 'JNZ', 'JC', 'JNC', 'JP', 'JM', 'JPE', 'JPO',
+  'CALL', 'CZ', 'CNZ', 'CC', 'CNC', 'CP', 'CM', 'CPE', 'CPO',
+])
+
 // Parse a numeric value (hex, binary, decimal)
 function parseNumber(str: string): number | null {
   str = str.trim().toUpperCase()
@@ -349,6 +354,8 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
   let currentAddress = 0x0000
   let startAddress = 0x0000
   let hasOrg = false
+  const lineToAddress = new Map<number, number>()
+  let programEnd = 0
 
   // First pass: collect labels and calculate addresses
   for (let i = 0; i < lines.length; i++) {
@@ -413,6 +420,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
           currentAddress += 1
         }
       }
+      if (currentAddress > programEnd) programEnd = currentAddress
       continue
     }
 
@@ -421,6 +429,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       const data = line.substring(2).trim()
       const values = data.split(',')
       currentAddress += values.length * 2
+      if (currentAddress > programEnd) programEnd = currentAddress
       continue
     }
 
@@ -429,6 +438,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       const size = parseNumber(line.substring(2).trim())
       if (size !== null) {
         currentAddress += size
+        if (currentAddress > programEnd) programEnd = currentAddress
       }
       continue
     }
@@ -453,7 +463,9 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
 
     for (const [key, info] of Object.entries(INSTRUCTIONS)) {
       if (upperLine === key || upperLine.startsWith(key + ' ') || upperLine.startsWith(key + ',')) {
+        lineToAddress.set(lineNum, currentAddress)
         currentAddress += info.bytes
+        if (currentAddress > programEnd) programEnd = currentAddress
         foundInstruction = true
         break
       }
@@ -470,14 +482,18 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       if (instructionKeys.length > 0) {
         const info = INSTRUCTIONS[instructionKeys[0]]
         if (info) {
+          lineToAddress.set(lineNum, currentAddress)
           currentAddress += info.bytes
+          if (currentAddress > programEnd) programEnd = currentAddress
           foundInstruction = true
         }
       } else {
         // Check for single-word instructions
         const info = INSTRUCTIONS[mnemonic]
         if (info) {
+          lineToAddress.set(lineNum, currentAddress)
           currentAddress += info.bytes
+          if (currentAddress > programEnd) programEnd = currentAddress
           foundInstruction = true
         }
       }
@@ -651,7 +667,17 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
             bytes.push(0)
           }
         } else if (info.type === 'immediate16' || info.type === 'address') {
-          let value = parseNumber(operandStr) ?? symbols.get(operandStr)
+          let value = parseNumber(operandStr)
+          if (value !== undefined && lineToAddress.has(value)) {
+            value = lineToAddress.get(value)!
+          }
+          if (value === undefined) {
+            value = symbols.get(operandStr)
+          }
+          if (value !== undefined && JUMP_CALL_MNEMONICS.has(key.split(' ')[0]) && (value < startAddress || value >= programEnd)) {
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.jumpOutOfRange', operandStr, startAddress.toString(16).toUpperCase(), (programEnd - 1).toString(16).toUpperCase()), type: 'error' })
+            value = undefined
+          }
           if (value !== undefined) {
             bytes.push(value & 0xFF)
             bytes.push((value >> 8) & 0xFF)
@@ -693,7 +719,17 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
             bytes.push(0)
           }
         } else if ((info.type === 'immediate16' || info.type === 'address') && operand) {
-          const value = parseNumber(operand) ?? symbols.get(operand)
+          let value = parseNumber(operand)
+          if (value !== undefined && lineToAddress.has(value)) {
+            value = lineToAddress.get(value)!
+          }
+          if (value === undefined) {
+            value = symbols.get(operand)
+          }
+          if (value !== undefined && JUMP_CALL_MNEMONICS.has(mnemonic) && (value < startAddress || value >= programEnd)) {
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.jumpOutOfRange', operand, startAddress.toString(16).toUpperCase(), (programEnd - 1).toString(16).toUpperCase()), type: 'error' })
+            value = undefined
+          }
           if (value !== undefined) {
             bytes.push(value & 0xFF)
             bytes.push((value >> 8) & 0xFF)

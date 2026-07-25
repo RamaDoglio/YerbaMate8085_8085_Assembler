@@ -155,7 +155,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
               currentLine === i + 1 && 'bg-primary/20 text-primary font-medium'
             )}
           >
-            {i + 1}
+            {(i + 1).toString(16).toUpperCase()}
           </div>
         ))}
       </div>

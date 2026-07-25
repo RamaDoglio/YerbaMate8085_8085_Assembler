@@ -26,8 +26,8 @@ export default function SimulatorPage() {
   const { toast } = useToast()
   const cpuRef = useRef<CPU8085 | null>(null)
   
-  const [code, setCode] = useState(getExamples('es')[0].code)
-  const [selectedExampleIdx, setSelectedExampleIdx] = useState<number>(0)
+  const [code, setCode] = useState('')
+  const [selectedExampleIdx, setSelectedExampleIdx] = useState<number>(-1)
   const [assemblerResult, setAssemblerResult] = useState<AssemblerResult | null>(null)
   const [cpuState, setCpuState] = useState<CPUState | null>(null)
   const [memory, setMemory] = useState<Uint8Array>(new Uint8Array(65536))
@@ -37,6 +37,7 @@ export default function SimulatorPage() {
   const [hasStepped, setHasStepped] = useState(false)
   const [studentName, setStudentName] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [userBackupCode, setUserBackupCode] = useState('')
   const runIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export default function SimulatorPage() {
   }, [])
 
   useEffect(() => {
-    setCode(getExamples(locale)[selectedExampleIdx].code)
+    if (selectedExampleIdx >= 0) {
+      setCode(getExamples(locale)[selectedExampleIdx].code)
+    }
   }, [locale, selectedExampleIdx])
 
   const handleAssemble = useCallback(() => {
@@ -276,7 +279,8 @@ export default function SimulatorPage() {
     if (!assemblerResult?.success) return
     try {
       const blob = generatePDF(assemblerResult.instructions, [], [], studentName.trim() || t('page.unnamed'), '1', '1', locale)
-      await downloadBlob(blob, 'Plantilla_Ejercicio.pdf')
+      const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
+      await downloadBlob(blob, `Plantilla_${safeName}.pdf`)
       setDialogOpen(false)
       toast({ title: t('page.exported'), description: t('page.templateGenerated') })
     } catch (e) {
@@ -291,7 +295,8 @@ export default function SimulatorPage() {
     try {
       const { steps, relevantMemory } = buildExecutionSteps()
       const blob = generatePDF(assemblerResult.instructions, steps, relevantMemory, studentName.trim() || t('page.unnamed'), '1', '1', locale)
-      await downloadBlob(blob, 'Prueba_Escritorio_Ejercicio.pdf')
+      const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
+      await downloadBlob(blob, `Prueba_Escritorio_${safeName}.pdf`)
       setDialogOpen(false)
       toast({ title: t('page.exported'), description: t('page.pdfGenerated') })
     } catch (e) {
@@ -365,9 +370,9 @@ export default function SimulatorPage() {
         onExportFull={handleExportFull}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto">
         {/* Left panel - Code Editor */}
-        <div className="flex w-1/2 flex-col border-r border-border">
+        <div className="flex w-full lg:w-1/2 flex-col border-b lg:border-b-0 lg:border-r border-border">
           <div className="flex-shrink-0 border-b border-border px-4 py-2">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-medium text-muted-foreground">{t('page.codeEditorTitle')}</h2>
@@ -375,8 +380,16 @@ export default function SimulatorPage() {
                 key={locale}
                 value=""
                 onValueChange={(value) => {
+                  if (value === 'backup') {
+                    setCode(userBackupCode)
+                    setSelectedExampleIdx(-1)
+                    return
+                  }
                   const idx = parseInt(value, 10)
                   if (!isNaN(idx) && getExamples(locale)[idx]) {
+                    if (!userBackupCode && code.trim()) {
+                      setUserBackupCode(code)
+                    }
                     setSelectedExampleIdx(idx)
                     setCode(getExamples(locale)[idx].code)
                   }
@@ -386,6 +399,11 @@ export default function SimulatorPage() {
                   <SelectValue placeholder={t('page.loadExample')} />
                 </SelectTrigger>
                 <SelectContent>
+                  {userBackupCode && (
+                    <SelectItem value="backup" className="text-xs border-b border-border mb-1">
+                      ← {t('page.myCode')}
+                    </SelectItem>
+                  )}
                   {getExamples(locale).map((ex, idx) => (
                     <SelectItem key={idx} value={String(idx)} className="text-xs">
                       {ex.name}
@@ -406,9 +424,9 @@ export default function SimulatorPage() {
         </div>
 
         {/* Right panel - Tabs */}
-        <div className="flex w-1/2 flex-col">
+        <div className="flex w-full lg:w-1/2 flex-col">
           <Tabs defaultValue="registers" className="flex h-full flex-col">
-            <TabsList className="mx-2 mt-2 grid w-auto grid-cols-5">
+            <TabsList className="mx-2 mt-2 grid w-auto grid-cols-5 overflow-x-auto">
               <TabsTrigger value="registers">{t('page.tabRegisters')}</TabsTrigger>
               <TabsTrigger value="memory">{t('page.tabMemory')}</TabsTrigger>
               <TabsTrigger value="output">{t('page.tabOutput')}</TabsTrigger>

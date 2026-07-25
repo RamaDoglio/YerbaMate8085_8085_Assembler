@@ -132,9 +132,12 @@ export function generatePDF(
   // PLANTILLA
   // ════════════════════════════════════════════
   const plantBody: (string | number)[][] = []
+  let addrVal = instructions.length > 0 ? instructions[0].line : 0
+
   instructions.forEach((inst, idx) => {
     const instNum = String(idx + 1).padStart(2, '0')
-    const addr = hex4(inst.address)
+    const addr = hex4(addrVal)
+    addrVal++
     const opcode0 = inst.bytes[0] !== undefined
       ? inst.bytes[0].toString(16).toUpperCase().padStart(2, '0')
       : '--'
@@ -143,7 +146,8 @@ export function generatePDF(
     plantBody.push([instNum, addr, mnem, opcode0, obs])
 
     for (let b = 1; b < inst.bytes.length; b++) {
-      const byteAddr = hex4((inst.address + b) & 0xFFFF)
+      const byteAddr = hex4(addrVal)
+      addrVal++
       const byteLabel = b === 1 ? translate(locale, 'pdf.byteLabel2') : b === 2 ? translate(locale, 'pdf.byteLabel3') : `Byte ${b + 1}`
       const byteVal = inst.bytes[b].toString(16).toUpperCase().padStart(2, '0')
       plantBody.push(['', byteAddr, '-', byteVal, byteLabel])

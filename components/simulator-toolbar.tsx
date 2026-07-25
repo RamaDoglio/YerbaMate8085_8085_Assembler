@@ -105,13 +105,13 @@ export function SimulatorToolbar({
 
   return (
     <div className={cn(
-      'flex items-center gap-2 p-2 border-b border-border bg-card/50',
+      'flex items-center gap-1 sm:gap-2 p-2 border-b border-border bg-card/50 flex-wrap',
       className
     )}>
       {/* Logo */}
       <div className="flex items-center gap-2 px-2">
-        <Cpu className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm">{t('toolbar.simulatorTitle')}</span>
+        <Cpu className="h-5 w-5 text-primary shrink-0" />
+        <span className="font-semibold text-sm hidden sm:inline">{t('toolbar.simulatorTitle')}</span>
       </div>
 
       <div className="h-6 w-px bg-border mx-2" />
@@ -262,12 +262,12 @@ export function SimulatorToolbar({
       </Tooltip>
 
       {/* Status indicator */}
-      <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="ml-auto flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
         <div className={cn(
           'h-2 w-2 rounded-full',
           isRunning ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/30'
         )} />
-        <span>{isRunning ? t('toolbar.statusRunning') : t('toolbar.statusReady')}</span>
+        <span className="hidden sm:inline">{isRunning ? t('toolbar.statusRunning') : t('toolbar.statusReady')}</span>
       </div>
 
       <div className="h-6 w-px bg-border mx-2" />

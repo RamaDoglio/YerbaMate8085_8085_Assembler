@@ -30,6 +30,7 @@
   "page": {
     "codeEditorTitle": "Código Assembler",
     "loadExample": "Cargar ejemplo...",
+    "myCode": "Mi código",
     "tabRegisters": "Registros",
     "tabMemory": "Memoria",
     "tabOutput": "Salida",
@@ -176,7 +177,8 @@
     "duplicateLabel": "Etiqueta duplicada: {0}",
     "unknownInstruction": "Instrucción desconocida: {0}",
     "invalidImmediate": "Valor inmediato inválido: {0}",
-    "invalidAddress": "Dirección/valor inválido: {0}"
+    "invalidAddress": "Dirección/valor inválido: {0}",
+    "jumpOutOfRange": "El salto/llamada a '{0}' está fuera del rango del programa ({1}h - {2}h)"
   },
   "examples": {
     "basicArithmetic": "Aritmética Básica",
