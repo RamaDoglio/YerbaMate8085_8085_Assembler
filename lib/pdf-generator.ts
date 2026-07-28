@@ -146,7 +146,22 @@ export function generatePDF(
       : '--'
     const mnem = formatMnemonic(inst.instruction)
     const obs = getObservation(inst.instruction, locale)
-    plantBody.push([instNum, addr, mnem, opcode0, obs])
+
+    const jumpOps = new Set(['JMP','JZ','JNZ','JC','JNC','JP','JM','JPE','JPO',
+      'CALL','CZ','CNZ','CC','CNC','CP','CM','CPE','CPO'])
+    const firstOp = inst.instruction.split(/[\s,]+/).filter(Boolean)[0]?.toUpperCase()
+
+    let resolvedMnem = mnem
+    let resolvedObs = obs
+
+    if (jumpOps.has(firstOp) && inst.bytes.length === 3) {
+      const target = (inst.bytes[2] << 8) | inst.bytes[1]
+      const addrStr = hex4(target)
+      resolvedMnem = mnem.replace(/, .+$/, `, ${addrStr}`)
+      resolvedObs = obs.replace(/\[.*?\]$/, `[${addrStr}]`)
+    }
+
+    plantBody.push([instNum, addr, resolvedMnem, opcode0, resolvedObs])
 
     for (let b = 1; b < inst.bytes.length; b++) {
       const byteAddr = hex4(addrVal)

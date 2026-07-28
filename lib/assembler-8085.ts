@@ -667,7 +667,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
             bytes.push(0)
           }
         } else if (info.type === 'immediate16' || info.type === 'address') {
-          let value = parseNumber(operandStr)
+          let value: number | undefined = parseNumber(operandStr) ?? undefined
           if (value !== undefined && lineToAddress.has(value)) {
             value = lineToAddress.get(value)!
           }
@@ -719,7 +719,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
             bytes.push(0)
           }
         } else if ((info.type === 'immediate16' || info.type === 'address') && operand) {
-          let value = parseNumber(operand)
+          let value: number | undefined = parseNumber(operand) ?? undefined
           if (value !== undefined && lineToAddress.has(value)) {
             value = lineToAddress.get(value)!
           }
