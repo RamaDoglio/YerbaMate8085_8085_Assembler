@@ -13,7 +13,10 @@ export interface ExecutionStep {
   address: number
   state: CPUState
   mValue: number
-  memoryAffected?: { address: number; value: number }[]
+  memoryAddress?: number
+  memoryValue?: number
+  memoryAddress2?: number
+  memoryValue2?: number
 }
 
 const FONT = 'Courier'
@@ -216,10 +219,7 @@ export function generatePDF(
   doc.text(`${translate(locale, 'pdf.sheet')} ${sheetNum}`, pageW - margin, y, { align: 'right' })
   y += 10
 
-  // Combined memory + trace table
-  // Header row 1: POSC. MEMORIA | MEMORIA | Ins. N° | REGISTROS | BANDERAS
-  // Header row 2: (empty)       | (empty) | (empty)  | A B C D E H L M | Z P S CY
-
+  // Single combined table: one row per index combining memory + step
   const regLabels = ['A', 'B', 'C', 'D', 'E', 'H', 'L', 'M']
   const flagLabels = ['Z', 'P', 'S', 'CY']
 
@@ -237,38 +237,32 @@ export function generatePDF(
     ],
   ]
 
+  const flag = (v: boolean) => (v ? '1' : '')
+  const maxRows = Math.max(relevantMemory.length, steps.length)
   const traceBody: (string | number)[][] = []
 
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i]
-    const s = step.state
+  for (let i = 0; i < maxRows; i++) {
+    const mem = i < relevantMemory.length ? relevantMemory[i] : null
+    const step = i < steps.length ? steps[i] : null
 
-    const memAddr = i < relevantMemory.length
-      ? hex4(relevantMemory[i].address)
-      : ''
-    const memVal = i < relevantMemory.length
-      ? hex2(relevantMemory[i].value)
-      : ''
+    const row = [
+      mem ? hex4(mem.address) : '',
+      mem ? hex2(mem.value) : '',
+      step ? String(step.instructionNumber) : '',
+    ]
 
-    const flag = (v: boolean) => (v ? '1' : '')
+    if (step) {
+      const s = step.state
+      row.push(
+        hex2(s.A), hex2(s.B), hex2(s.C), hex2(s.D),
+        hex2(s.E), hex2(s.H), hex2(s.L), hex2(step.mValue)
+      )
+      row.push(flag(s.flags.Z), flag(s.flags.P), flag(s.flags.S), flag(s.flags.CY))
+    } else {
+      row.push('', '', '', '', '', '', '', '', '', '', '', '')
+    }
 
-    traceBody.push([
-      memAddr,
-      memVal,
-      String(step.instructionNumber),
-      hex2(s.A),
-      hex2(s.B),
-      hex2(s.C),
-      hex2(s.D),
-      hex2(s.E),
-      hex2(s.H),
-      hex2(s.L),
-      hex2(step.mValue),
-      flag(s.flags.Z),
-      flag(s.flags.P),
-      flag(s.flags.S),
-      flag(s.flags.CY),
-    ])
+    traceBody.push(row)
   }
 
   autoTable(doc, {

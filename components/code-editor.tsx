@@ -152,10 +152,10 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
             key={i}
             className={cn(
               'px-3 leading-6',
-              currentLine === i + 1 && 'bg-primary/20 text-primary font-medium'
+              currentLine === i && 'bg-primary/20 text-primary font-medium'
             )}
           >
-            {(i + 1).toString(16).toUpperCase()}
+            {(i).toString(16).toUpperCase()}
           </div>
         ))}
       </div>
@@ -173,7 +173,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
               key={i}
               className={cn(
                 'min-h-[1.5rem]',
-                currentLine === i + 1 && 'bg-primary/10 -mx-3 px-3'
+                currentLine === i && 'bg-primary/10 -mx-3 px-3'
               )}
             >
               {highlightLine(line)}

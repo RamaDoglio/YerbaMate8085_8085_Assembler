@@ -150,7 +150,6 @@ export class CPU8085 {
     this.state.flags.S = (byte & 0x80) !== 0
     this.state.flags.P = this.calculateParity(byte)
     this.state.flags.AC = auxCarry
-    this.state.flags.CY = result > 0xFF || result < 0
   }
 
   private calculateParity(value: number): boolean {

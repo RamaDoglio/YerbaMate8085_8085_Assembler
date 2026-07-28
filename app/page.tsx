@@ -38,6 +38,7 @@ export default function SimulatorPage() {
   const [studentName, setStudentName] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [userBackupCode, setUserBackupCode] = useState('')
+  const [snapshotMemory, setSnapshotMemory] = useState<Uint8Array | null>(null)
   const runIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -59,11 +60,22 @@ export default function SimulatorPage() {
     if (result.success) {
       setHasStepped(false)
       if (cpuRef.current) {
+        const savedMemory = new Uint8Array(cpuRef.current.getMemory())
+        const isInProgram = (addr: number) =>
+          result.instructions.some(inst =>
+            addr >= inst.address && addr < inst.address + inst.bytes.length
+          )
+
         cpuRef.current.reset()
         cpuRef.current.loadProgram(result.machineCode, result.startAddress)
+        const mem = cpuRef.current.getMemory()
+        for (let i = 0; i < 65536; i++) {
+          if (!isInProgram(i)) mem[i] = savedMemory[i]
+        }
         cpuRef.current.setPC(result.startAddress)
         setCpuState(cpuRef.current.getState())
-        setMemory(new Uint8Array(cpuRef.current.getMemory()))
+        setMemory(new Uint8Array(mem))
+        setSnapshotMemory(new Uint8Array(mem))
       }
 
       toast({
@@ -176,19 +188,25 @@ export default function SimulatorPage() {
 
     if (cpuRef.current) {
       cpuRef.current.reset()
-      
-      // Reload program if assembled
+
+      if (snapshotMemory) {
+        const mem = cpuRef.current.getMemory()
+        for (let i = 0; i < 65536; i++) {
+          mem[i] = snapshotMemory[i]
+        }
+      }
+
       if (assemblerResult?.success) {
         cpuRef.current.loadProgram(assemblerResult.machineCode, assemblerResult.startAddress)
         cpuRef.current.setPC(assemblerResult.startAddress)
       }
-      
+
       setCpuState(cpuRef.current.getState())
       setMemory(new Uint8Array(cpuRef.current.getMemory()))
       setOutputPorts({})
       updateCurrentLine()
     }
-  }, [assemblerResult, handleStop, updateCurrentLine])
+  }, [assemblerResult, snapshotMemory, handleStop, updateCurrentLine])
 
   const handleSetInputPort = useCallback((port: number, value: number) => {
     if (cpuRef.current) {
@@ -218,13 +236,23 @@ export default function SimulatorPage() {
 
     const cpu = cpuRef.current
     const savedPC = cpu.getState().PC
+    const savedMemory = new Uint8Array(cpu.getMemory())
+    const isInProgram = (addr: number) =>
+      assemblerResult.instructions.some(inst =>
+        addr >= inst.address && addr < inst.address + inst.bytes.length
+      )
 
     cpu.reset()
     cpu.loadProgram(assemblerResult.machineCode, assemblerResult.startAddress)
+    const mem = cpu.getMemory()
+    for (let i = 0; i < 65536; i++) {
+      if (!isInProgram(i)) mem[i] = savedMemory[i]
+    }
     cpu.setPC(assemblerResult.startAddress)
 
     const steps: ExecutionStep[] = []
     let stepNum = 0
+    const accessedAddresses = new Set<number>()
 
     while (!cpu.getState().halted && stepNum < 1000) {
       const currentPc = cpu.getState().PC
@@ -238,6 +266,49 @@ export default function SimulatorPage() {
       const instIndex = assemblerResult.instructions.findIndex(
         inst => inst.address === currentPc
       )
+
+      const instUpper = (currentInst?.instruction ?? '').toUpperCase()
+      const parts = instUpper.split(/[\s,]+/).filter(Boolean)
+      const op = parts[0]
+      let memoryAddress: number | undefined
+      let memoryValue: number | undefined
+      let memoryAddress2: number | undefined
+      let memoryValue2: number | undefined
+
+      if (['LDA', 'STA', 'LHLD', 'SHLD'].includes(op) && parts.length > 1) {
+        memoryAddress = parseInt(parts[1], 16)
+        memoryValue = cpu.readMemory(memoryAddress)
+        accessedAddresses.add(memoryAddress)
+        if (op === 'LHLD' || op === 'SHLD') {
+          const addr2 = (memoryAddress + 1) & 0xFFFF
+          memoryAddress2 = addr2
+          memoryValue2 = cpu.readMemory(addr2)
+          accessedAddresses.add(addr2)
+        }
+      } else if (op === 'LDAX') {
+        const rp = parts[1] === 'B' ? cpu.getBC() : cpu.getDE()
+        memoryAddress = rp
+        memoryValue = cpu.readMemory(rp)
+        accessedAddresses.add(rp)
+      } else if (op === 'STAX') {
+        const rp = parts[1] === 'B' ? cpu.getBC() : cpu.getDE()
+        memoryAddress = rp
+        memoryValue = cpu.readMemory(rp)
+        accessedAddresses.add(rp)
+      } else if (op === 'MOV' && parts[2] === 'M') {
+        memoryAddress = cpu.getHL()
+        memoryValue = cpu.readMemory(memoryAddress)
+        accessedAddresses.add(memoryAddress)
+      } else if (op === 'MOV' && parts[1] === 'M') {
+        memoryAddress = cpu.getHL()
+        memoryValue = cpu.readMemory(memoryAddress)
+        accessedAddresses.add(memoryAddress)
+      } else if (['ADD', 'SUB', 'CMP', 'INR', 'DCR', 'ANA', 'ORA', 'XRA'].includes(op) && parts[1] === 'M') {
+        memoryAddress = cpu.getHL()
+        memoryValue = cpu.readMemory(memoryAddress)
+        accessedAddresses.add(memoryAddress)
+      }
+
       steps.push({
         stepNumber: stepNum,
         instructionNumber: instIndex >= 0 ? instIndex + 1 : 0,
@@ -245,26 +316,27 @@ export default function SimulatorPage() {
         address: currentPc,
         state: cpu.getState(),
         mValue: cpu.readMemory(cpu.getHL()),
+        memoryAddress,
+        memoryValue,
+        memoryAddress2,
+        memoryValue2,
       })
     }
 
-    const memAddresses = new Set<number>()
-    for (const inst of assemblerResult.instructions) {
-      const m = inst.instruction.match(/^(LDA|STA|LHLD|SHLD)\s+([0-9A-Fa-f]+)[hH]?$/)
-      if (m) {
-        const addr = parseInt(m[2], 16)
-        memAddresses.add(addr)
-        memAddresses.add(addr + 1)
-      }
-    }
-    const relevantMemory = Array.from(memAddresses).sort().map(addr => ({
-      address: addr,
-      value: cpu.readMemory(addr),
-    }))
+    // Read final memory values for accessed addresses before restoring
+    const finalMem = cpu.getMemory()
+    const relevantMemory = Array.from(accessedAddresses)
+      .filter(a => a >= 0 && a <= 0xFFFF)
+      .sort((a, b) => a - b)
+      .map(address => ({ address, value: finalMem[address] }))
 
-    // Restore saved PC
+    // Restore saved PC and memory
     cpu.reset()
     cpu.loadProgram(assemblerResult.machineCode, assemblerResult.startAddress)
+    const mem2 = cpu.getMemory()
+    for (let i = 0; i < 65536; i++) {
+      if (!isInProgram(i)) mem2[i] = savedMemory[i]
+    }
     cpu.setPC(savedPC)
 
     return { steps, relevantMemory }

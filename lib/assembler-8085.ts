@@ -360,7 +360,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
   // First pass: collect labels and calculate addresses
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim()
-    const lineNum = i + 1
+    const lineNum = i
 
     // Remove comments
     const commentIndex = line.indexOf(';')
@@ -510,7 +510,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i].trim()
-    const lineNum = i + 1
+    const lineNum = i
 
     // Remove comments
     const commentIndex = line.indexOf(';')
