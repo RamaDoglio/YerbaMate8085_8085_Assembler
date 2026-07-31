@@ -178,7 +178,8 @@
     "unknownInstruction": "Instrucción desconocida: {0}",
     "invalidImmediate": "Valor inmediato inválido: {0}",
     "invalidAddress": "Dirección/valor inválido: {0}",
-    "jumpOutOfRange": "El salto/llamada a '{0}' está fuera del rango del programa ({1}h - {2}h)"
+    "jumpOutOfRange": "El salto/llamada a '{0}' está fuera del rango del programa ({1}h - {2}h)",
+    "missingHLT": "Falta la instrucción HLT al final del programa"
   },
   "examples": {
     "basicArithmetic": "Aritmética Básica",

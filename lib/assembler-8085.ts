@@ -752,6 +752,12 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
     }
   }
 
+  // Check for missing HLT
+  const tieneHLT = instructions.some(inst => inst.instruction.toUpperCase().trim() === 'HLT')
+  if (!tieneHLT) {
+    errors.push({ line: instructions.length > 0 ? instructions[instructions.length - 1].line : 0, message: translate(locale, 'assembler.missingHLT'), type: 'error' })
+  }
+
   return {
     success: errors.filter(e => e.type === 'error').length === 0,
     machineCode,
