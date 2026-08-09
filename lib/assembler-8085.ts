@@ -637,68 +637,57 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
     let foundInstruction = false
 
     for (const [key, info] of Object.entries(INSTRUCTIONS)) {
-      if (upperLine === key) {
-        // Simple instruction with no additional operand
-        const bytes = [info.opcode]
-        instructions.push({
-          address: currentAddress,
-          bytes,
-          label,
-          instruction: line,
-          line: lineNum,
-        })
-        machineCode.push(...bytes)
-        currentAddress += info.bytes
-        foundInstruction = true
-        break
+      if (upperLine !== key && !upperLine.startsWith(key + ' ') && !upperLine.startsWith(key + ',')) {
+        continue
       }
-      
-      if (upperLine.startsWith(key + ' ') || upperLine.startsWith(key + ',')) {
-        // Instruction with operand
-        const operandStr = upperLine.substring(key.length).replace(/^[,\s]+/, '').trim()
-        const bytes = [info.opcode]
 
-        if (info.type === 'immediate') {
-          const value = parseNumber(operandStr) ?? symbols.get(operandStr)
-          if (value !== undefined) {
-            bytes.push(value & 0xFF)
-          } else {
-            errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidImmediate', operandStr), type: 'error' })
-            bytes.push(0)
-          }
-        } else if (info.type === 'immediate16' || info.type === 'address') {
-          let value: number | undefined = parseNumber(operandStr) ?? undefined
-          if (value !== undefined && lineToAddress.has(value)) {
-            value = lineToAddress.get(value)!
-          }
-          if (value === undefined) {
-            value = symbols.get(operandStr)
-          }
-          if (value !== undefined && JUMP_CALL_MNEMONICS.has(key.split(' ')[0]) && (value < startAddress || value >= programEnd)) {
-            errors.push({ line: lineNum, message: translate(locale, 'assembler.jumpOutOfRange', operandStr, startAddress.toString(16).toUpperCase(), (programEnd - 1).toString(16).toUpperCase()), type: 'error' })
-            value = undefined
-          }
-          if (value !== undefined) {
-            bytes.push(value & 0xFF)
-            bytes.push((value >> 8) & 0xFF)
-          } else {
-            errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidAddress', operandStr), type: 'error' })
-            bytes.push(0, 0)
-          }
+      const operandStr = upperLine.substring(key.length).replace(/^[,\s]+/, '').trim()
+      const bytes = [info.opcode]
+      foundInstruction = true
+
+      if ((info.type === 'immediate' || info.type === 'immediate16' || info.type === 'address') && !operandStr) {
+        errors.push({ line: lineNum, message: translate(locale, 'assembler.missingOperand', key), type: 'error' })
+        bytes.push(...(info.type === 'immediate' ? [0x00] : [0x00, 0x00]))
+      } else if (info.type === 'immediate') {
+        const value = parseNumber(operandStr) ?? symbols.get(operandStr)
+        if (value !== undefined) {
+          bytes.push(value & 0xFF)
+        } else {
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidImmediate', operandStr), type: 'error' })
+          bytes.push(0)
         }
-
-        instructions.push({
-          address: currentAddress,
-          bytes,
-          label,
-          instruction: line,
-          line: lineNum,
-        })
-        machineCode.push(...bytes)
-        currentAddress += info.bytes
-        foundInstruction = true
-        break
+      } else if (info.type === 'immediate16' || info.type === 'address') {
+        let value: number | undefined = parseNumber(operandStr) ?? undefined
+        if (value !== undefined && lineToAddress.has(value)) {
+          value = lineToAddress.get(value)!
+        }
+        if (value === undefined) {
+          value = symbols.get(operandStr)
+        }
+        if (value !== undefined && JUMP_CALL_MNEMONICS.has(key.split(' ')[0]) && (value < startAddress || value >= programEnd)) {
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.jumpOutOfRange', operandStr, startAddress.toString(16).toUpperCase(), (programEnd - 1).toString(16).toUpperCase()), type: 'error' })
+          value = undefined
+        }
+        if (value !== undefined) {
+          bytes.push(value & 0xFF)
+          bytes.push((value >> 8) & 0xFF)
+        } else {
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidAddress', operandStr), type: 'error' })
+          bytes.push(0, 0)
+        }
       }
+
+      instructions.push({
+        address: currentAddress,
+        bytes,
+        label,
+        instruction: line,
+        line: lineNum,
+      })
+      machineCode.push(...bytes)
+      currentAddress += info.bytes
+      foundInstruction = true
+      break
     }
 
     if (!foundInstruction) {
@@ -711,7 +700,10 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       if (info) {
         const bytes = [info.opcode]
 
-        if (info.type === 'immediate' && operand) {
+        if ((info.type === 'immediate' || info.type === 'immediate16' || info.type === 'address') && !operand) {
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.missingOperand', mnemonic), type: 'error' })
+          bytes.push(...(info.type === 'immediate' ? [0x00] : [0x00, 0x00]))
+        } else if (info.type === 'immediate' && operand) {
           const value = parseNumber(operand) ?? symbols.get(operand)
           if (value !== undefined) {
             bytes.push(value & 0xFF)
