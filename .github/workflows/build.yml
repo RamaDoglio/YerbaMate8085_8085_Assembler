@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2.2.3
+        uses: softprops/action-gh-release@v3.0.2
         env:
           NODE_OPTIONS: --use-system-ca
         with:
