@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -63,7 +64,9 @@ jobs:
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.3
+        env:
+          NODE_OPTIONS: --use-system-ca
         with:
           files: |
             src-tauri/target/release/YerbaMate8085-Windows-x64_portable.exe

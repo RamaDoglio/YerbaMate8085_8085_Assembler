@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "YerbaMate8085",
   "version": "0.1.0",
-  "identifier": "com.YerbaMate8085.app",
+  "identifier": "com.yerbamate8085.desktop",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
