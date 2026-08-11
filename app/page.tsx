@@ -93,7 +93,18 @@ export default function SimulatorPage() {
     } else {
       toast({
         title: t('page.assembleFailed'),
-        description: t('page.assembleFailedDesc', result.errors.length),
+        description: (
+          <>
+            {t('page.assembleFailedDesc', result.errors.length)}
+            <div className="mt-1 space-y-0.5 text-sm">
+              {result.errors.map((error, i) => (
+                <div key={i}>
+                  {t('machineCodeView.line')} {error.line}: {error.message}
+                </div>
+              ))}
+            </div>
+          </>
+        ),
         variant: 'destructive',
       })
     }
