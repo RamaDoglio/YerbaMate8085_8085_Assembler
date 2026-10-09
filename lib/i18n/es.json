@@ -56,6 +56,8 @@
     "description": "Complete los datos para generar el documento.",
     "studentNameLabel": "Nombre del alumno",
     "studentNamePlaceholder": "Ingrese su nombre...",
+    "exerciseNumberLabel": "Número de ejercicio",
+    "exerciseNumberPlaceholder": "Ej: 1",
     "nameRequired": "Debe ingresar un nombre para continuar.",
     "noStepWarning": "No se ha ejecutado el programa paso a paso.",
     "stepHint": "Para guardar la prueba de escritorio, seleccione una de las opciones de abajo.",

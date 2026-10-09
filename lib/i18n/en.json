@@ -56,6 +56,8 @@
     "description": "Fill in the details to generate the document.",
     "studentNameLabel": "Student name",
     "studentNamePlaceholder": "Enter your name...",
+    "exerciseNumberLabel": "Exercise number",
+    "exerciseNumberPlaceholder": "e.g. 1",
     "nameRequired": "You must enter a name to continue.",
     "noStepWarning": "The program has not been stepped through.",
     "stepHint": "To save the desk check, select one of the options below.",

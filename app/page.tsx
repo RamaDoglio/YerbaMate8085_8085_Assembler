@@ -25,7 +25,7 @@ export default function SimulatorPage() {
   const { t, locale } = useLanguage()
   const { toast } = useToast()
   const cpuRef = useRef<CPU8085 | null>(null)
-  
+
   const [code, setCode] = useState('')
   const [selectedExampleIdx, setSelectedExampleIdx] = useState<number>(-1)
   const [assemblerResult, setAssemblerResult] = useState<AssemblerResult | null>(null)
@@ -36,6 +36,7 @@ export default function SimulatorPage() {
   const [currentLine, setCurrentLine] = useState<number | undefined>(undefined)
   const [hasStepped, setHasStepped] = useState(false)
   const [studentName, setStudentName] = useState('')
+  const [exerciseNum, setExerciseNum] = useState('1')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [userBackupCode, setUserBackupCode] = useState('')
   const [snapshotMemory, setSnapshotMemory] = useState<Uint8Array | null>(null)
@@ -83,7 +84,6 @@ export default function SimulatorPage() {
         description: t('page.assembleSuccessDesc', result.machineCode.length),
       })
 
-      // Find the line for the current PC
       const currentInstruction = result.instructions.find(
         inst => inst.address === result.startAddress
       )
@@ -334,14 +334,12 @@ export default function SimulatorPage() {
       })
     }
 
-    // Read final memory values for accessed addresses before restoring
     const finalMem = cpu.getMemory()
     const relevantMemory = Array.from(accessedAddresses)
       .filter(a => a >= 0 && a <= 0xFFFF)
       .sort((a, b) => a - b)
       .map(address => ({ address, value: finalMem[address] }))
 
-    // Restore saved PC and memory
     cpu.reset()
     cpu.loadProgram(assemblerResult.machineCode, assemblerResult.startAddress)
     const mem2 = cpu.getMemory()
@@ -361,7 +359,15 @@ export default function SimulatorPage() {
   const handleExportOnlyTemplate = useCallback(async () => {
     if (!assemblerResult?.success) return
     try {
-      const blob = generatePDF(assemblerResult.instructions, [], [], studentName.trim() || t('page.unnamed'), '1', '1', locale)
+      const blob = generatePDF(
+        assemblerResult.instructions,
+        [],
+        [],
+        studentName.trim() || t('page.unnamed'),
+        exerciseNum || '1',
+        '1',
+        locale,
+      )
       const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
       await downloadBlob(blob, `Plantilla_${safeName}.pdf`)
       setDialogOpen(false)
@@ -370,14 +376,22 @@ export default function SimulatorPage() {
       console.error('Export error (template only):', e)
       toast({ title: t('page.error'), description: t('page.templateFailed'), variant: 'destructive' })
     }
-  }, [assemblerResult, studentName, toast, t, locale])
+  }, [assemblerResult, studentName, exerciseNum, toast, t, locale])
 
   const handleExportFull = useCallback(async () => {
     if (!assemblerResult?.success || !cpuRef.current) return
 
     try {
       const { steps, relevantMemory } = buildExecutionSteps()
-      const blob = generatePDF(assemblerResult.instructions, steps, relevantMemory, studentName.trim() || t('page.unnamed'), '1', '1', locale)
+      const blob = generatePDF(
+        assemblerResult.instructions,
+        steps,
+        relevantMemory,
+        studentName.trim() || t('page.unnamed'),
+        exerciseNum || '1',
+        '1',
+        locale,
+      )
       const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
       await downloadBlob(blob, `Prueba_Escritorio_${safeName}.pdf`)
       setDialogOpen(false)
@@ -385,7 +399,7 @@ export default function SimulatorPage() {
     } catch (e) {
       console.error('Export error (full):', e)
     }
-  }, [assemblerResult, studentName, buildExecutionSteps, toast, t, locale])
+  }, [assemblerResult, studentName, exerciseNum, buildExecutionSteps, toast, t, locale])
 
   const handleLoad = useCallback(async () => {
     const path = await open({
@@ -398,7 +412,6 @@ export default function SimulatorPage() {
     }
   }, [])
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey
@@ -449,12 +462,13 @@ export default function SimulatorPage() {
         hasStepped={hasStepped}
         studentName={studentName}
         onStudentNameChange={setStudentName}
+        exerciseNum={exerciseNum}
+        onExerciseNumChange={setExerciseNum}
         onExportOnlyTemplate={handleExportOnlyTemplate}
         onExportFull={handleExportFull}
       />
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto">
-        {/* Left panel - Code Editor */}
         <div className="flex w-full lg:w-1/2 flex-col border-b lg:border-b-0 lg:border-r border-border">
           <div className="flex-shrink-0 border-b border-border px-4 py-2">
             <div className="flex items-center justify-between gap-2">
@@ -506,7 +520,6 @@ export default function SimulatorPage() {
           </div>
         </div>
 
-        {/* Right panel - Tabs */}
         <div className="flex w-full lg:w-1/2 flex-col">
           <Tabs defaultValue="registers" className="flex h-full flex-col">
             <TabsList className="mx-2 mt-2 grid w-auto grid-cols-5 overflow-x-auto">

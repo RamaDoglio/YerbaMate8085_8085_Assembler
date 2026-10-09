@@ -20,6 +20,8 @@ interface ExportDialogProps {
   hasStepped: boolean
   studentName: string
   onStudentNameChange: (name: string) => void
+  exerciseNum: string
+  onExerciseNumChange: (value: string) => void
   onExportOnlyTemplate: () => void
   onExportFull: () => void
   disabled?: boolean
@@ -31,6 +33,8 @@ export function ExportDialog({
   hasStepped,
   studentName,
   onStudentNameChange,
+  exerciseNum,
+  onExerciseNumChange,
   onExportOnlyTemplate,
   onExportFull,
   disabled,
@@ -90,6 +94,18 @@ export function ExportDialog({
                 {t('exportDialog.nameRequired')}
               </p>
             )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="exercise-number">{t('exportDialog.exerciseNumberLabel')}</Label>
+            <Input
+              id="exercise-number"
+              type="number"
+              min={1}
+              placeholder={t('exportDialog.exerciseNumberPlaceholder')}
+              value={exerciseNum}
+              onChange={(e) => onExerciseNumChange(e.target.value)}
+            />
           </div>
 
           {!hasStepped && (
