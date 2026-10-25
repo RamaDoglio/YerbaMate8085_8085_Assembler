@@ -6,6 +6,7 @@ import { translate, type Locale } from './i18n'
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeFile, remove } from '@tauri-apps/plugin-fs'
 
+
 export interface ExecutionStep {
   stepNumber: number
   instructionNumber: number
@@ -101,6 +102,10 @@ function getObservation(inst: string, locale: Locale): string {
   }
 }
 
+export const MAX_STUDENT_NAME_LENGTH = 120
+export const MAX_EXERCISE_NUM_LENGTH = 5
+export const MAX_SHEET_NUM_LENGTH = 5
+
 export function generatePDF(
   instructions: AssembledInstruction[],
   steps: ExecutionStep[],
@@ -110,6 +115,10 @@ export function generatePDF(
   sheetNum: string = '1',
   locale: Locale = 'es',
 ): Blob {
+  const safeStudentName = studentName.slice(0, MAX_STUDENT_NAME_LENGTH)
+  const safeExerciseNum = exerciseNum.slice(0, MAX_EXERCISE_NUM_LENGTH)
+  const safeSheetNum = sheetNum.slice(0, MAX_SHEET_NUM_LENGTH)
+
   const doc = new jsPDF('portrait', 'mm', 'a4')
   const pageW = 210
   const margin = 14
@@ -124,11 +133,11 @@ export function generatePDF(
   doc.setFont(TITLE_FONT, 'normal')
   doc.setFontSize(11)
   const today = new Date().toLocaleDateString(locale === 'en' ? 'en-US' : 'es-AR')
-  doc.text(`${translate(locale, 'pdf.student')} ${studentName}`, margin, y)
+  doc.text(`${translate(locale, 'pdf.student')} ${safeStudentName}`, margin, y)
   doc.text(`${translate(locale, 'pdf.date')} ${today}`, pageW - margin, y, { align: 'right' })
   y += 6
-  doc.text(`${translate(locale, 'pdf.exercise')} ${exerciseNum}`, margin, y)
-  doc.text(`${translate(locale, 'pdf.sheet')} ${sheetNum}`, pageW - margin, y, { align: 'right' })
+  doc.text(`${translate(locale, 'pdf.exercise')} ${safeExerciseNum}`, margin, y)
+  doc.text(`${translate(locale, 'pdf.sheet')} ${safeSheetNum}`, pageW - margin, y, { align: 'right' })
   y += 10
 
   // ════════════════════════════════════════════
@@ -227,11 +236,11 @@ export function generatePDF(
 
   doc.setFont(TITLE_FONT, 'normal')
   doc.setFontSize(11)
-  doc.text(`${translate(locale, 'pdf.student')} ${studentName}`, margin, y)
+  doc.text(`${translate(locale, 'pdf.student')} ${safeStudentName}`, margin, y)
   doc.text(`${translate(locale, 'pdf.date')} ${today}`, pageW - margin, y, { align: 'right' })
   y += 6
-  doc.text(`${translate(locale, 'pdf.exercise')} ${exerciseNum}`, margin, y)
-  doc.text(`${translate(locale, 'pdf.sheet')} ${sheetNum}`, pageW - margin, y, { align: 'right' })
+  doc.text(`${translate(locale, 'pdf.exercise')} ${safeExerciseNum}`, margin, y)
+  doc.text(`${translate(locale, 'pdf.sheet')} ${safeSheetNum}`, pageW - margin, y, { align: 'right' })
   y += 10
 
   // Single combined table: one row per index combining memory + step

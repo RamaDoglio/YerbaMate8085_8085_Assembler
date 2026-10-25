@@ -49,7 +49,9 @@
     "error": "Error",
     "templateFailed": "Could not generate template",
     "pdfGenerated": "PDF generated successfully",
-    "unnamed": "Unnamed"
+    "unnamed": "Unnamed",
+    "sourceTooLarge": "Source code exceeds the maximum allowed size (1 MB).",
+    "sourceTooManyLines": "Source code exceeds the maximum allowed number of lines (10,000)."
   },
   "exportDialog": {
     "title": "Export to PDF",
@@ -65,7 +67,8 @@
     "saveFullHint": "(Will run automatically step by step)",
     "saveTemplateOnly": "Save Code Template Only",
     "exportPdf": "Export PDF",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "invalidInput": "Invalid data: name allows up to {0} characters and number up to {1}."
   },
   "machineCodeView": {
     "title": "Assembled Code",
@@ -182,7 +185,10 @@
     "invalidAddress": "Invalid address/value: {0}",
     "jumpOutOfRange": "Jump/call to '{0}' is outside the program range ({1}h - {2}h)",
     "missingHLT": "Missing HLT instruction at the end of the program",
-    "missingOperand": "Missing operand for instruction {0}"
+    "missingOperand": "Missing operand for instruction {0}",
+    "invalidOperand": "Invalid operand for {0}: \"{1}\"",
+    "sizeOutOfRange": "Size out of range for {0} (allowed: {1})",
+    "exceedsMemory": "Directive uses {0} bytes and overflows memory from {1}"
   },
   "examples": {
     "basicArithmetic": "Basic Arithmetic",

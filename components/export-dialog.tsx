@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/lib/i18n'
+import { MAX_STUDENT_NAME_LENGTH, MAX_EXERCISE_NUM_LENGTH } from '@/lib/pdf-generator'
 
 interface ExportDialogProps {
   open: boolean
@@ -87,6 +88,7 @@ export function ExportDialog({
                 onStudentNameChange(e.target.value)
                 setNameError(false)
               }}
+              maxLength={MAX_STUDENT_NAME_LENGTH}
               className={nameError ? 'border-destructive' : ''}
             />
             {nameError && (
@@ -100,11 +102,13 @@ export function ExportDialog({
             <Label htmlFor="exercise-number">{t('exportDialog.exerciseNumberLabel')}</Label>
             <Input
               id="exercise-number"
-              type="number"
-              min={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder={t('exportDialog.exerciseNumberPlaceholder')}
               value={exerciseNum}
               onChange={(e) => onExerciseNumChange(e.target.value)}
+              maxLength={MAX_EXERCISE_NUM_LENGTH}
             />
           </div>
 

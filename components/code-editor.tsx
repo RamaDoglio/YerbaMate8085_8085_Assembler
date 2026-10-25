@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useMemo, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 interface CodeEditorProps {
@@ -102,7 +102,29 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
   const highlightRef = useRef<HTMLDivElement>(null)
   const lineNumbersRef = useRef<HTMLDivElement>(null)
 
-  const lines = value.split('\n')
+  const lines = useMemo(() => value.split('\n'), [value])
+  const lineCount = lines.length
+
+  const highlightedLines = useMemo(
+    () => lines.map((line) => highlightLine(line)),
+    [lines]
+  )
+
+  const lineNumbers = useMemo(
+    () =>
+      Array.from({ length: lineCount }, (_, i) => (
+        <div
+          key={i}
+          className={cn(
+            'px-3 leading-6',
+            currentLine === i && 'bg-primary/20 text-primary font-medium'
+          )}
+        >
+          {i.toString(16).toUpperCase()}
+        </div>
+      )),
+    [lineCount, currentLine]
+  )
 
   const syncScroll = useCallback(() => {
     if (textareaRef.current && highlightRef.current && lineNumbersRef.current) {
@@ -147,17 +169,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
         className="flex-shrink-0 overflow-hidden bg-muted/30 py-3 text-right font-mono text-sm text-muted-foreground select-none"
         style={{ width: '3.5rem' }}
       >
-        {lines.map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'px-3 leading-6',
-              currentLine === i && 'bg-primary/20 text-primary font-medium'
-            )}
-          >
-            {(i).toString(16).toUpperCase()}
-          </div>
-        ))}
+        {lineNumbers}
       </div>
 
       {/* Editor area */}
@@ -168,7 +180,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
           className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-all p-3 font-mono text-sm leading-6"
           aria-hidden="true"
         >
-          {lines.map((line, i) => (
+          {highlightedLines.map((nodes, i) => (
             <div
               key={i}
               className={cn(
@@ -176,7 +188,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
                 currentLine === i && 'bg-primary/10 -mx-3 px-3'
               )}
             >
-              {highlightLine(line)}
+              {nodes}
             </div>
           ))}
         </div>

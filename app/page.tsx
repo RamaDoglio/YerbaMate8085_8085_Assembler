@@ -21,6 +21,17 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
 import { useLanguage } from '@/lib/i18n'
 
+const MAX_SOURCE_BYTES = 1024 * 1024  // 1 MB
+const MAX_SOURCE_LINES = 10_000
+
+type SourceSizeError = 'bytes' | 'lines' | null
+
+export function validateSourceSize(source: string): SourceSizeError {
+  if (source.length > MAX_SOURCE_BYTES) return 'bytes'
+  if (source.split('\n').length > MAX_SOURCE_LINES) return 'lines'
+  return null
+}
+
 export default function SimulatorPage() {
   const { t, locale } = useLanguage()
   const { toast } = useToast()
@@ -54,58 +65,92 @@ export default function SimulatorPage() {
     }
   }, [locale, selectedExampleIdx])
 
-  const handleAssemble = useCallback(() => {
-    const result = assemble(code, locale)
-    setAssemblerResult(result)
+    const handleAssemble = useCallback(() => {
+    try {
+      const sizeError = validateSourceSize(code)
+      if (sizeError) {
+        toast({
+          variant: 'destructive',
+          title: t('page.error'),
+          description:
+            sizeError === 'bytes'
+              ? t('page.sourceTooLarge')
+              : t('page.sourceTooManyLines'),
+        })
+        return
+      }
 
-    if (result.success) {
-      setHasStepped(false)
-      if (cpuRef.current) {
-        const savedMemory = new Uint8Array(cpuRef.current.getMemory())
-        const isInProgram = (addr: number) =>
-          result.instructions.some(inst =>
-            addr >= inst.address && addr < inst.address + inst.bytes.length
-          )
+      const result = assemble(code, locale)
 
-        cpuRef.current.reset()
-        cpuRef.current.loadProgram(result.machineCode, result.startAddress)
-        const mem = cpuRef.current.getMemory()
-        for (let i = 0; i < 65536; i++) {
-          if (!isInProgram(i)) mem[i] = savedMemory[i]
+      if (result.success) {
+        setHasStepped(false)
+        if (cpuRef.current) {
+          const savedMemory = new Uint8Array(cpuRef.current.getMemory())
+          const isInProgram = (addr: number) =>
+            result.instructions.some(inst =>
+              addr >= inst.address && addr < inst.address + inst.bytes.length
+            )
+
+          cpuRef.current.reset()
+          cpuRef.current.loadProgram(result.machineCode, result.startAddress)
+          const mem = cpuRef.current.getMemory()
+          for (let i = 0; i < 65536; i++) {
+            if (!isInProgram(i)) mem[i] = savedMemory[i]
+          }
+          cpuRef.current.setPC(result.startAddress)
+          setCpuState(cpuRef.current.getState())
+          setMemory(new Uint8Array(mem))
+          setSnapshotMemory(new Uint8Array(mem))
         }
-        cpuRef.current.setPC(result.startAddress)
-        setCpuState(cpuRef.current.getState())
-        setMemory(new Uint8Array(mem))
-        setSnapshotMemory(new Uint8Array(mem))
+
+        toast({
+          title: t('page.assembleSuccess'),
+          description: t('page.assembleSuccessDesc', result.machineCode.length),
+        })
+
+        const currentInstruction = result.instructions.find(
+          inst => inst.address === result.startAddress
+        )
+        if (currentInstruction) {
+          setCurrentLine(currentInstruction.line)
+        }
+      } else {
+        toast({
+          title: t('page.assembleFailed'),
+          description: (
+            <>
+              {t('page.assembleFailedDesc', result.errors.length)}
+              <div className="mt-1 space-y-0.5 text-sm">
+                {result.errors.map((error, i) => (
+                  <div key={i}>
+                    {t('machineCodeView.line')} {error.line}: {error.message}
+                  </div>
+                ))}
+              </div>
+            </>
+          ),
+          variant: 'destructive',
+        })
       }
+    } catch (err) {
+      // Defensa en profundidad (SEC-01.3): después de 2.2/2.3 assemble() no debería
+      // tirar, pero si algo inesperado se escapa (OOM, bug, RangeError no previsto),
+      // la UI no queda en blanco y el usuario ve un toast en vez de un crash silencioso.
+      if (runIntervalRef.current) {
+        clearInterval(runIntervalRef.current)
+        runIntervalRef.current = null
+      }
+      setIsRunning(false)
+
+      const detail =
+        err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+
+      console.error('Assemble error (unexpected):', err)
 
       toast({
-        title: t('page.assembleSuccess'),
-        description: t('page.assembleSuccessDesc', result.machineCode.length),
-      })
-
-      const currentInstruction = result.instructions.find(
-        inst => inst.address === result.startAddress
-      )
-      if (currentInstruction) {
-        setCurrentLine(currentInstruction.line)
-      }
-    } else {
-      toast({
-        title: t('page.assembleFailed'),
-        description: (
-          <>
-            {t('page.assembleFailedDesc', result.errors.length)}
-            <div className="mt-1 space-y-0.5 text-sm">
-              {result.errors.map((error, i) => (
-                <div key={i}>
-                  {t('machineCodeView.line')} {error.line}: {error.message}
-                </div>
-              ))}
-            </div>
-          </>
-        ),
         variant: 'destructive',
+        title: t('page.error'),
+        description: detail,
       })
     }
   }, [code, toast, t, locale])
@@ -402,15 +447,37 @@ export default function SimulatorPage() {
   }, [assemblerResult, studentName, exerciseNum, buildExecutionSteps, toast, t, locale])
 
   const handleLoad = useCallback(async () => {
-    const path = await open({
-      filters: [{ name: 'Assembly', extensions: ['asm', 'txt'] }],
-      multiple: false,
-    })
-    if (path) {
+    try {
+      const path = await open({
+        filters: [{ name: 'Assembly', extensions: ['asm', 'txt'] }],
+        multiple: false,
+      })
+      if (!path) return
+
       const content = await readTextFile(path as string)
+
+      const sizeError = validateSourceSize(content)
+      if (sizeError) {
+        toast({
+          variant: 'destructive',
+          title: t('page.error'),
+          description:
+            sizeError === 'bytes'
+              ? t('page.sourceTooLarge')
+              : t('page.sourceTooManyLines'),
+        })
+        return
+      }
+
       setCode(content)
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: t('page.error'),
+        description: err instanceof Error ? err.message : String(err),
+      })
     }
-  }, [])
+  }, [toast, t])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -2,6 +2,8 @@
 
 import { translate, type Locale } from './i18n'
 
+const MEMORY_SIZE = 0x10000 // 64 KB
+
 export interface AssemblerError {
   line: number
   message: string
@@ -321,29 +323,89 @@ const JUMP_CALL_MNEMONICS = new Set([
   'CALL', 'CZ', 'CNZ', 'CC', 'CNC', 'CP', 'CM', 'CPE', 'CPO',
 ])
 
+export function hasErrorForLine(errors: AssemblerError[], line: number): boolean {
+  return errors.some(e => e.line === line && e.type === 'error')
+}
+
 // Parse a numeric value (hex, binary, decimal)
 function parseNumber(str: string): number | null {
-  str = str.trim().toUpperCase()
-  
-  // Hex format: 0xFF, FFH, 0XFF
-  if (str.endsWith('H')) {
-    const hex = parseInt(str.slice(0, -1), 16)
-    return isNaN(hex) ? null : hex
+  const v = str.trim().toUpperCase()
+  if (v.length === 0) return null
+
+  // Hex con sufijo H: FFH, 0FFH (pero NO 0XFFH, que es inválido)
+  if (/^[0-9A-F]+H$/.test(v)) {
+    return parseInt(v.slice(0, -1), 16)
   }
-  if (str.startsWith('0X')) {
-    const hex = parseInt(str.slice(2), 16)
-    return isNaN(hex) ? null : hex
+  // Hex con prefijo 0X: 0xFF, 0XFF
+  if (/^0X[0-9A-F]+$/.test(v)) {
+    return parseInt(v.slice(2), 16)
   }
-  
-  // Binary format: 10101010B
-  if (str.endsWith('B')) {
-    const bin = parseInt(str.slice(0, -1), 2)
-    return isNaN(bin) ? null : bin
+  // Binario con sufijo B: 1010B
+  if (/^[01]+B$/.test(v)) {
+    return parseInt(v.slice(0, -1), 2)
   }
-  
-  // Decimal
-  const dec = parseInt(str, 10)
-  return isNaN(dec) ? null : dec
+  // Decimal puro (sin letras ni sufijos)
+  if (/^[0-9]+$/.test(v)) {
+    return parseInt(v, 10)
+  }
+
+  return null
+}
+
+/**
+ * Valida que un tamaño de directiva (DS/DB/DW) sea un entero
+ * en el rango permitido y que no desborde la memoria desde
+ * currentAddress. Devuelve el número o null si hay error
+ * (y ya pushea el error al array).
+ */
+export function validateSizeDirective(
+  raw: string,
+  directive: string,
+  currentAddress: number,
+  line: number,
+  errors: AssemblerError[],
+  locale: Locale,
+  extraBytes = 0
+): number | null {
+  const size = parseNumber(raw)
+
+  if (size === null || !Number.isInteger(size)) {
+    errors.push({
+      line,
+      message: translate(locale, 'assembler.invalidOperand', directive, raw),
+      type: 'error',
+    })
+    return null
+  }
+
+  if (size < 0) {
+    errors.push({
+      line,
+      message: translate(locale, 'assembler.invalidOperand', directive, raw),
+      type: 'error',
+    })
+    return null
+  }
+
+  if (size > 0xFFFF) {
+    errors.push({
+      line,
+      message: translate(locale, 'assembler.sizeOutOfRange', directive, '0..65535'),
+      type: 'error',
+    })
+    return null
+  }
+
+  if (currentAddress + size + extraBytes > MEMORY_SIZE) {
+    errors.push({
+      line,
+      message: translate(locale, 'assembler.exceedsMemory', String(size + extraBytes), `0x${currentAddress.toString(16).toUpperCase()}`),
+      type: 'error',
+    })
+    return null
+  }
+
+  return size
 }
 
 export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerResult {
@@ -410,16 +472,25 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
     if (line.toUpperCase().startsWith('DB')) {
       const data = line.substring(2).trim()
       const values = data.split(',')
+      let size = 0
       for (const val of values) {
         const trimmed = val.trim()
         if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
-          // String
-          const str = trimmed.slice(1, -1)
-          currentAddress += str.length
+          size += trimmed.slice(1, -1).length
         } else {
-          currentAddress += 1
+          size += 1
         }
       }
+      if (size > MEMORY_SIZE || currentAddress + size > MEMORY_SIZE) {
+        errors.push({
+          line: lineNum,
+          message: translate(locale, 'assembler.exceedsMemory',
+            String(size), `0x${currentAddress.toString(16).toUpperCase()}`),
+          type: 'error',
+        })
+        continue
+      }
+      currentAddress += size
       if (currentAddress > programEnd) programEnd = currentAddress
       continue
     }
@@ -428,18 +499,29 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
     if (line.toUpperCase().startsWith('DW')) {
       const data = line.substring(2).trim()
       const values = data.split(',')
-      currentAddress += values.length * 2
+      const size = values.length * 2
+      if (size > MEMORY_SIZE || currentAddress + size > MEMORY_SIZE) {
+        errors.push({
+          line: lineNum,
+          message: translate(locale, 'assembler.exceedsMemory',
+          String(size), `0x${currentAddress.toString(16).toUpperCase()}`),
+          type: 'error',
+        })
+        continue
+      }
+      currentAddress += size
       if (currentAddress > programEnd) programEnd = currentAddress
       continue
     }
 
     // Check for DS directive (define space)
     if (line.toUpperCase().startsWith('DS')) {
-      const size = parseNumber(line.substring(2).trim())
-      if (size !== null) {
-        currentAddress += size
-        if (currentAddress > programEnd) programEnd = currentAddress
-      }
+      const size = validateSizeDirective(
+        line.substring(2).trim(), 'DS', currentAddress, lineNum, errors, locale
+      )
+      if (size === null) continue
+      currentAddress += size
+      if (currentAddress > programEnd) programEnd = currentAddress
       continue
     }
 
@@ -553,10 +635,11 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
 
     // Handle DB directive
     if (line.toUpperCase().startsWith('DB')) {
+      if (hasErrorForLine(errors, lineNum)) continue
       const data = line.substring(2).trim()
       const values = data.split(',')
       const bytes: number[] = []
-      
+
       for (const val of values) {
         const trimmed = val.trim()
         if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
@@ -571,35 +654,7 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
           }
         }
       }
-      
-      instructions.push({
-        address: currentAddress,
-        bytes,
-        label,
-        instruction: line,
-        line: lineNum,
-      })
-      
-      machineCode.push(...bytes)
-      currentAddress += bytes.length
-      continue
-    }
 
-    // Handle DW directive
-    if (line.toUpperCase().startsWith('DW')) {
-      const data = line.substring(2).trim()
-      const values = data.split(',')
-      const bytes: number[] = []
-      
-      for (const val of values) {
-        const trimmed = val.trim()
-        const num = parseNumber(trimmed) ?? symbols.get(trimmed.toUpperCase())
-        if (num !== undefined) {
-          bytes.push(num & 0xFF)
-          bytes.push((num >> 8) & 0xFF)
-        }
-      }
-      
       instructions.push({
         address: currentAddress,
         bytes,
@@ -607,27 +662,33 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         instruction: line,
         line: lineNum,
       })
-      
-      machineCode.push(...bytes)
+      for (let b = 0; b < bytes.length; b++) {
+        machineCode.push(bytes[b])
+      }
       currentAddress += bytes.length
       continue
     }
 
     // Handle DS directive
     if (line.toUpperCase().startsWith('DS')) {
-      const size = parseNumber(line.substring(2).trim())
-      if (size !== null) {
-        const bytes = new Array(size).fill(0)
-        instructions.push({
-          address: currentAddress,
-          bytes,
-          label,
-          instruction: line,
-          line: lineNum,
-        })
-        machineCode.push(...bytes)
-        currentAddress += size
+      if (hasErrorForLine(errors, lineNum)) continue
+      const size = validateSizeDirective(
+        line.substring(2).trim(), 'DS', currentAddress, lineNum, errors, locale
+      )
+      if (size === null) continue
+      const bytes: number[] = []
+      for (let b = 0; b < size; b++) bytes.push(0)
+      instructions.push({
+        address: currentAddress,
+        bytes,
+        label,
+        instruction: line,
+        line: lineNum,
+      })
+      for (let b = 0; b < bytes.length; b++) {
+        machineCode.push(bytes[b])
       }
+      currentAddress += size
       continue
     }
 
@@ -684,7 +745,9 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         instruction: line,
         line: lineNum,
       })
-      machineCode.push(...bytes)
+      for (let b = 0; b < bytes.length; b++) {
+        machineCode.push(bytes[b])
+      }
       currentAddress += info.bytes
       foundInstruction = true
       break
@@ -737,7 +800,9 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
           instruction: line,
           line: lineNum,
         })
-        machineCode.push(...bytes)
+        for (let b = 0; b < bytes.length; b++) {
+          machineCode.push(bytes[b])
+        }
         currentAddress += info.bytes
         foundInstruction = true
       }
