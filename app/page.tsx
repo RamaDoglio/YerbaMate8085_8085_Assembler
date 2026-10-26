@@ -82,6 +82,8 @@ export default function SimulatorPage() {
 
       const result = assemble(code, locale)
 
+      setAssemblerResult(result)
+
       if (result.success) {
         setHasStepped(false)
         if (cpuRef.current) {

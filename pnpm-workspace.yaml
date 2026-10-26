@@ -3,3 +3,11 @@ packages:
 allowBuilds:
   core-js: true
   sharp: true
+overrides:
+  dompurify: "^3.4.17"
+  postcss: "^8.5.23"
+  sharp: "^0.35.5"
+  source-map-js: "^1.2.2"
+  nanoid: "^3.3.18"
+  lodash: "^4.18.1"
+  baseline-browser-mapping: "^2.11.0"
