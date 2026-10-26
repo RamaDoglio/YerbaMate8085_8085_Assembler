@@ -1,0 +1,10 @@
+[advisories]
+# Advertencias residuales de Tauri en Linux (GTK3). No son vulnerabilidades
+# explotables y no se pueden resolver desde este proyecto: dependen de que
+# el upstream de Tauri/Wry migre a GTK4.
+# Revisado: 2026-10-26 (cargo audit, 438 crate dependencies).
+ignore = [
+    # GTK3 de Tauri (Linux). Requiere migración a GTK4 en Tauri.
+    "RUSTSEC-2024-0370", # proc-macro-error 1.0.4: unmaintained
+    "RUSTSEC-2024-0429", # glib 0.18.5: unsound (VariantStrIter iterators)
+]
