@@ -32,3 +32,6 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 
 AGENTS.md
+
+# TypeScript build info
+*.tsbuildinfo
