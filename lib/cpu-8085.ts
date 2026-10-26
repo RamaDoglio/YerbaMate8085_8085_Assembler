@@ -114,6 +114,10 @@ export class CPU8085 {
   getOutputPorts(): Record<number, number> {
     return { ...this.state.outputPorts }
   }
+  
+  getInputPorts(): Record<number, number> {
+    return { ...this.state.inputPorts }
+  }
 
   // Get 16-bit register pairs
   getBC(): number {

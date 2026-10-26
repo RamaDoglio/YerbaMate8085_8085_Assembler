@@ -41,15 +41,16 @@ function FlagBadge({ effect }: { effect: FlagEffect }) {
 }
 
 function InstructionRow({ inst, isHighlighted }: { inst: InstructionInfo; isHighlighted: boolean }) {
+  const isDirective = inst.isDirective === true
   return (
     <div className={cn(
       'grid grid-cols-[120px_80px_40px_40px_1fr] gap-1 rounded px-2 py-1.5 text-xs items-start',
       isHighlighted && 'bg-primary/10'
     )}>
       <span className="font-mono font-semibold text-[var(--code-instruction)]">{inst.mnemonic}</span>
-      <span className="font-mono text-muted-foreground whitespace-pre-line">{formatOpcode(inst.opcode)}</span>
-      <span className="font-mono text-muted-foreground text-center">{inst.bytes}</span>
-      <span className="font-mono text-muted-foreground text-center">{inst.cycles}</span>
+      <span className="font-mono text-muted-foreground whitespace-pre-line">{isDirective ? '—' : formatOpcode(inst.opcode)}</span>
+      <span className="font-mono text-muted-foreground text-center">{isDirective ? '—' : inst.bytes}</span>
+      <span className="font-mono text-muted-foreground text-center">{isDirective ? '—' : inst.cycles}</span>
       <span className="text-muted-foreground leading-tight">{inst.description}</span>
     </div>
   )
@@ -57,6 +58,20 @@ function InstructionRow({ inst, isHighlighted }: { inst: InstructionInfo; isHigh
 
 function FlagRow({ inst }: { inst: InstructionInfo }) {
   const { t } = useLanguage()
+  if (inst.isDirective) {
+    return (
+      <div className="flex items-center gap-1.5 px-2 pb-1.5">
+        <span className="text-[10px] text-muted-foreground ml-2">
+          {t('instructionReference.modeLabel')} {inst.addressing}
+        </span>
+        {inst.example && (
+          <span className="text-[10px] text-muted-foreground ml-2 font-mono">
+            {t('instructionReference.exampleLabel')} {inst.example}
+          </span>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="flex items-center gap-1.5 px-2 pb-1.5">
       <span className="text-[10px] text-muted-foreground w-20">{t('instructionReference.flagsLabel')}</span>

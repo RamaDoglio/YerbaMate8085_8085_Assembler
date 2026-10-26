@@ -51,6 +51,7 @@ export default function SimulatorPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [userBackupCode, setUserBackupCode] = useState('')
   const [snapshotMemory, setSnapshotMemory] = useState<Uint8Array | null>(null)
+  const [snapshotInputPorts, setSnapshotInputPorts] = useState<Record<number, number> | null>(null)
   const runIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function SimulatorPage() {
         setHasStepped(false)
         if (cpuRef.current) {
           const savedMemory = new Uint8Array(cpuRef.current.getMemory())
+          const savedInputPorts = cpuRef.current.getInputPorts()
           const isInProgram = (addr: number) =>
             result.instructions.some(inst =>
               addr >= inst.address && addr < inst.address + inst.bytes.length
@@ -99,10 +101,15 @@ export default function SimulatorPage() {
           for (let i = 0; i < 65536; i++) {
             if (!isInProgram(i)) mem[i] = savedMemory[i]
           }
+          // Restaurar puertos de entrada configurados antes del ensamblado
+          for (const [port, value] of Object.entries(savedInputPorts)) {
+            cpuRef.current.setInputPort(Number(port), value)
+          }
           cpuRef.current.setPC(result.startAddress)
           setCpuState(cpuRef.current.getState())
           setMemory(new Uint8Array(mem))
           setSnapshotMemory(new Uint8Array(mem))
+          setSnapshotInputPorts({ ...savedInputPorts })
         }
 
         toast({
@@ -254,6 +261,13 @@ export default function SimulatorPage() {
         }
       }
 
+      // Restaurar puertos de entrada del snapshot del último ensamblado
+      if (snapshotInputPorts) {
+        for (const [port, value] of Object.entries(snapshotInputPorts)) {
+          cpuRef.current.setInputPort(Number(port), value)
+        }
+      }
+
       if (assemblerResult?.success) {
         cpuRef.current.loadProgram(assemblerResult.machineCode, assemblerResult.startAddress)
         cpuRef.current.setPC(assemblerResult.startAddress)
@@ -264,11 +278,12 @@ export default function SimulatorPage() {
       setOutputPorts({})
       updateCurrentLine()
     }
-  }, [assemblerResult, snapshotMemory, handleStop, updateCurrentLine])
+  }, [assemblerResult, snapshotMemory, snapshotInputPorts, handleStop, updateCurrentLine])
 
   const handleSetInputPort = useCallback((port: number, value: number) => {
     if (cpuRef.current) {
       cpuRef.current.setInputPort(port, value)
+      setCpuState(cpuRef.current.getState())
     }
   }, [])
 
@@ -627,6 +642,7 @@ export default function SimulatorPage() {
 
             <TabsContent value="io" className="flex-1 overflow-hidden p-2 mt-0">
               <IOView
+                inputPorts={cpuState?.inputPorts ?? {}}
                 outputPorts={outputPorts}
                 onSetInputPort={handleSetInputPort}
                 className="h-full"

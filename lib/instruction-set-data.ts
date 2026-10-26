@@ -15,6 +15,7 @@ export interface InstructionInfo {
   }
   addressing: string
   example?: string
+  isDirective?: boolean
 }
 
 export interface InstructionCategory {
@@ -147,6 +148,18 @@ export const INSTRUCTION_CATEGORIES: InstructionCategory[] = [
       { mnemonic: 'NOP', opcode: '00', bytes: 1, cycles: 4, addressing: 'Registro', description: 'No operación. No hace nada, solo consume 4 T-estados.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'NOP' },
       { mnemonic: 'RIM', opcode: '20', bytes: 1, cycles: 4, addressing: 'Registro', description: 'Lee la máscara de interrupción. Carga en A: bits 0-2 = máscaras (RST 5.5-7.5), bit 3 = IE, bits 4-6 = interrupciones pendientes, bit 7 = SID.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'RIM' },
       { mnemonic: 'SIM', opcode: '30', bytes: 1, cycles: 4, addressing: 'Registro', description: 'Programa las máscaras de interrupción. Configura máscaras para RST 5.5-7.5 (bits 0-2, habilitados por bit 3=MSE). Bit 4 resetea RST 7.5. Bits 6-7 controlan la salida SOD.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'SIM' },
+    ],
+  },
+  {
+    name: 'Directivas del Ensamblador',
+    description: 'Controlan el ensamblado: direcciones, datos y constantes. No son instrucciones de la CPU y no afectan banderas.',
+    instructions: [
+      { mnemonic: 'ORG addr', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Fija la dirección de ensamblado. El primer ORG define la dirección de inicio del programa. No genera código máquina.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'ORG 2000H', isDirective: true },
+      { mnemonic: 'DB d8[, ...]', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Define bytes de datos. Acepta valores hex/binario/decimal, etiquetas o EQU, y cadenas entre comillas que se expanden a ASCII.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DB 25H, "HOLA"', isDirective: true },
+      { mnemonic: 'DW d16[, ...]', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Define palabras de 16 bits. Cada valor se emite en little-endian (byte bajo primero).', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DW 1234H', isDirective: true },
+      { mnemonic: 'DS n', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Reserva n bytes de memoria inicializados en 0.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DS 10', isDirective: true },
+      { mnemonic: 'NAME EQU value', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Define una constante simbólica reutilizable en operandos. Solo acepta un valor numérico y no genera código máquina.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'PORT EQU 20H', isDirective: true },
+      { mnemonic: 'END', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Marca el fin del código fuente. El ensamblador ignora las líneas posteriores.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'END', isDirective: true },
     ],
   },
 ]
@@ -289,6 +302,18 @@ const INSTRUCTION_CATEGORIES_EN: InstructionCategory[] = [
       { mnemonic: 'SIM', opcode: '30', bytes: 1, cycles: 4, addressing: 'Register', description: 'Sets interrupt masks. Configures masks for RST 5.5-7.5 (bits 0-2, enabled by bit 3=MSE). Bit 4 resets RST 7.5. Bits 6-7 control SOD output.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'SIM' },
     ],
   },
+  {
+    name: 'Assembler Directives',
+    description: 'Control assembly: addresses, data and constants. They are not CPU instructions and do not affect flags.',
+    instructions: [
+      { mnemonic: 'ORG addr', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Sets the assembly address. The first ORG defines the program start address. Generates no machine code.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'ORG 2000H', isDirective: true },
+      { mnemonic: 'DB d8[, ...]', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Defines data bytes. Accepts hex/binary/decimal values, labels or EQU, and quoted strings expanded to ASCII.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DB 25H, "HOLA"', isDirective: true },
+      { mnemonic: 'DW d16[, ...]', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Defines 16-bit words. Each value is emitted in little-endian (low byte first).', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DW 1234H', isDirective: true },
+      { mnemonic: 'DS n', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Reserves n bytes of memory initialized to 0.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'DS 10', isDirective: true },
+      { mnemonic: 'NAME EQU value', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Defines a symbolic constant usable in operands. Only accepts a numeric value and generates no machine code.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'PORT EQU 20H', isDirective: true },
+      { mnemonic: 'END', opcode: '—', bytes: 0, cycles: 0, addressing: 'Directiva', description: 'Marks the end of the source code. The assembler ignores subsequent lines.', flags: { Z: 'unaffected', S: 'unaffected', P: 'unaffected', CY: 'unaffected', AC: 'unaffected' }, example: 'END', isDirective: true },
+    ],
+  },
 ]
 
 const ADDRESSING_MAP_EN: Record<string, string> = {
@@ -297,6 +322,7 @@ const ADDRESSING_MAP_EN: Record<string, string> = {
   'Inmediato 16 bits': '16-bit Immediate',
   'Directo': 'Direct',
   'Registro Indirecto': 'Register Indirect',
+  'Directiva': 'Directive',
 }
 
 export function getInstructionCategories(locale: string): InstructionCategory[] {

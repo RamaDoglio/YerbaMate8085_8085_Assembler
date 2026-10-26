@@ -315,6 +315,91 @@ SIN_ACARREO:
     RET
 `,
   },
+    {
+    name: 'Hola Mundo (E/S)',
+    description: 'Escribe "Hola Mundo! Soy un Ensamblador de 8085" letra por letra en distintos puertos para verlo en la tabla ASCII.',
+    code: `ORG 0000H
+; Escribe la frase letra por letra en los puertos 01H al 26H
+; para que la tabla ASCII muestre el texto completo.
+
+MVI A, 48H
+OUT 01H
+MVI A, 6FH
+OUT 02H
+MVI A, 6CH
+OUT 03H
+MVI A, 61H
+OUT 04H
+MVI A, 20H
+OUT 05H
+MVI A, 4DH
+OUT 06H
+MVI A, 75H
+OUT 07H
+MVI A, 6EH
+OUT 08H
+MVI A, 64H
+OUT 09H
+MVI A, 6FH
+OUT 0AH
+MVI A, 21H
+OUT 0BH
+MVI A, 20H
+OUT 0CH
+MVI A, 53H
+OUT 0DH
+MVI A, 6FH
+OUT 0EH
+MVI A, 79H
+OUT 0FH
+MVI A, 20H
+OUT 10H
+MVI A, 75H
+OUT 11H
+MVI A, 6EH
+OUT 12H
+MVI A, 20H
+OUT 13H
+MVI A, 45H
+OUT 14H
+MVI A, 6EH
+OUT 15H
+MVI A, 73H
+OUT 16H
+MVI A, 61H
+OUT 17H
+MVI A, 6DH
+OUT 18H
+MVI A, 62H
+OUT 19H
+MVI A, 6CH
+OUT 1AH
+MVI A, 61H
+OUT 1BH
+MVI A, 64H
+OUT 1CH
+MVI A, 6FH
+OUT 1DH
+MVI A, 72H
+OUT 1EH
+MVI A, 20H
+OUT 1FH
+MVI A, 64H
+OUT 20H
+MVI A, 65H
+OUT 21H
+MVI A, 20H
+OUT 22H
+MVI A, 38H
+OUT 23H
+MVI A, 30H
+OUT 24H
+MVI A, 38H
+OUT 25H
+MVI A, 35H
+OUT 26H
+HLT`,
+  },
 ]
 
 const EXAMPLE_PROGRAMS_EN: ExampleProgram[] = [
@@ -627,6 +712,91 @@ SIN_ACARREO:
     MVI B, 04H
     RET
 `,
+  },
+    {
+    name: 'Hello World (I/O)',
+    description: 'Writes "Hola Mundo! Soy un Ensamblador de 8085" letter by letter to different ports to display it in the ASCII table.',
+    code: `ORG 0000H
+; Writes the phrase letter by letter to ports 01H through 26H
+; so the ASCII table displays the complete text.
+
+MVI A, 48H
+OUT 01H
+MVI A, 6FH
+OUT 02H
+MVI A, 6CH
+OUT 03H
+MVI A, 61H
+OUT 04H
+MVI A, 20H
+OUT 05H
+MVI A, 4DH
+OUT 06H
+MVI A, 75H
+OUT 07H
+MVI A, 6EH
+OUT 08H
+MVI A, 64H
+OUT 09H
+MVI A, 6FH
+OUT 0AH
+MVI A, 21H
+OUT 0BH
+MVI A, 20H
+OUT 0CH
+MVI A, 53H
+OUT 0DH
+MVI A, 6FH
+OUT 0EH
+MVI A, 79H
+OUT 0FH
+MVI A, 20H
+OUT 10H
+MVI A, 75H
+OUT 11H
+MVI A, 6EH
+OUT 12H
+MVI A, 20H
+OUT 13H
+MVI A, 45H
+OUT 14H
+MVI A, 6EH
+OUT 15H
+MVI A, 73H
+OUT 16H
+MVI A, 61H
+OUT 17H
+MVI A, 6DH
+OUT 18H
+MVI A, 62H
+OUT 19H
+MVI A, 6CH
+OUT 1AH
+MVI A, 61H
+OUT 1BH
+MVI A, 64H
+OUT 1CH
+MVI A, 6FH
+OUT 1DH
+MVI A, 72H
+OUT 1EH
+MVI A, 20H
+OUT 1FH
+MVI A, 64H
+OUT 20H
+MVI A, 65H
+OUT 21H
+MVI A, 20H
+OUT 22H
+MVI A, 38H
+OUT 23H
+MVI A, 30H
+OUT 24H
+MVI A, 38H
+OUT 25H
+MVI A, 35H
+OUT 26H
+HLT`,
   },
 ]
 

@@ -669,6 +669,39 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       continue
     }
 
+    // Handle DW directive
+    if (line.toUpperCase().startsWith('DW')) {
+      if (hasErrorForLine(errors, lineNum)) continue
+      const data = line.substring(2).trim()
+      const values = data.split(',')
+      const bytes: number[] = []
+
+      for (const val of values) {
+        const trimmed = val.trim()
+        const num = parseNumber(trimmed) ?? symbols.get(trimmed.toUpperCase())
+        if (num !== undefined) {
+          bytes.push(num & 0xFF)
+          bytes.push((num >> 8) & 0xFF)
+        } else {
+          errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidOperand', 'DW', trimmed), type: 'error' })
+          bytes.push(0x00, 0x00)
+        }
+      }
+
+      instructions.push({
+        address: currentAddress,
+        bytes,
+        label,
+        instruction: line,
+        line: lineNum,
+      })
+      for (let b = 0; b < bytes.length; b++) {
+        machineCode.push(bytes[b])
+      }
+      currentAddress += bytes.length
+      continue
+    }
+
     // Handle DS directive
     if (line.toUpperCase().startsWith('DS')) {
       if (hasErrorForLine(errors, lineNum)) continue
