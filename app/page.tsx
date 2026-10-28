@@ -53,6 +53,18 @@ export default function SimulatorPage() {
   const [snapshotMemory, setSnapshotMemory] = useState<Uint8Array | null>(null)
   const [snapshotInputPorts, setSnapshotInputPorts] = useState<Record<number, number> | null>(null)
   const runIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [isCodeDirty, setIsCodeDirty] = useState(false)
+  const [isMemoryDirty, setIsMemoryDirty] = useState(false)
+
+
+  const handleCodeChange = useCallback((newCode: string) => {
+    setCode(newCode)
+    setIsCodeDirty(true)
+    setCurrentLine(undefined)
+  }, [])
+  
+  // Calculamos el estado global
+  const isDirty = isCodeDirty || isMemoryDirty
 
   useEffect(() => {
     cpuRef.current = new CPU8085()
@@ -62,9 +74,9 @@ export default function SimulatorPage() {
 
   useEffect(() => {
     if (selectedExampleIdx >= 0) {
-      setCode(getExamples(locale)[selectedExampleIdx].code)
+      handleCodeChange(getExamples(locale)[selectedExampleIdx].code) // ✅
     }
-  }, [locale, selectedExampleIdx])
+  }, [locale, selectedExampleIdx, handleCodeChange])
 
     const handleAssemble = useCallback(() => {
     try {
@@ -87,6 +99,8 @@ export default function SimulatorPage() {
 
       if (result.success) {
         setHasStepped(false)
+        setIsCodeDirty(false)
+        setIsMemoryDirty(false)
         if (cpuRef.current) {
           const savedMemory = new Uint8Array(cpuRef.current.getMemory())
           const savedInputPorts = cpuRef.current.getInputPorts()
@@ -250,6 +264,7 @@ export default function SimulatorPage() {
   const handleReset = useCallback(() => {
     handleStop()
     setHasStepped(false)
+    setIsMemoryDirty(false)
 
     if (cpuRef.current) {
       cpuRef.current.reset()
@@ -287,10 +302,13 @@ export default function SimulatorPage() {
     }
   }, [])
 
+
   const handleMemoryChange = useCallback((address: number, value: number) => {
     if (cpuRef.current) {
       cpuRef.current.writeMemory(address, value)
       setMemory(new Uint8Array(cpuRef.current.getMemory()))
+      setIsMemoryDirty(true)
+      setCurrentLine(undefined)
     }
   }, [])
 
@@ -486,7 +504,7 @@ export default function SimulatorPage() {
         return
       }
 
-      setCode(content)
+      handleCodeChange(content)
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -494,7 +512,7 @@ export default function SimulatorPage() {
         description: err instanceof Error ? err.message : String(err),
       })
     }
-  }, [toast, t])
+  }, [toast, t, handleCodeChange])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -502,10 +520,10 @@ export default function SimulatorPage() {
 
       if (e.key === 'F5') {
         e.preventDefault()
-        if (assemblerResult?.success && !isRunning) handleRun()
+        if (assemblerResult?.success && !isDirty && !isRunning) handleRun()
       } else if (e.key === 'F10') {
         e.preventDefault()
-        if (assemblerResult?.success && !isRunning) handleStep()
+        if (assemblerResult?.success && !isDirty && !isRunning) handleStep()
       } else if (e.key === 'F7' || (isCtrl && e.shiftKey && e.key === 'A')) {
         e.preventDefault()
         handleAssemble()
@@ -523,7 +541,7 @@ export default function SimulatorPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [assemblerResult, isRunning, handleAssemble, handleRun, handleStep, handleReset, handleSave, handleLoad])
+  }, [assemblerResult, isRunning, isDirty, handleAssemble, handleRun, handleStep, handleReset, handleSave, handleLoad])
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -537,7 +555,7 @@ export default function SimulatorPage() {
         onSave={handleSave}
         onExport={handleExport}
         isRunning={isRunning}
-        isAssembled={assemblerResult?.success ?? false}
+        isAssembled={(assemblerResult?.success ?? false) && !isDirty}
       />
 
       <ExportDialog
@@ -562,7 +580,7 @@ export default function SimulatorPage() {
                 value=""
                 onValueChange={(value) => {
                   if (value === 'backup') {
-                    setCode(userBackupCode)
+                    handleCodeChange(userBackupCode)
                     setSelectedExampleIdx(-1)
                     return
                   }
@@ -572,7 +590,7 @@ export default function SimulatorPage() {
                       setUserBackupCode(code)
                     }
                     setSelectedExampleIdx(idx)
-                    setCode(getExamples(locale)[idx].code)
+                    handleCodeChange(getExamples(locale)[idx].code)
                   }
                 }}
               >
@@ -597,7 +615,7 @@ export default function SimulatorPage() {
           <div className="flex-1 overflow-hidden p-2">
             <CodeEditor
               value={code}
-              onChange={setCode}
+              onChange={handleCodeChange}
               currentLine={currentLine}
               className="h-full"
             />
@@ -616,7 +634,12 @@ export default function SimulatorPage() {
 
             <TabsContent value="registers" className="flex-1 overflow-hidden p-2 mt-0">
               {cpuState && (
-                <RegisterView state={cpuState} className="h-full overflow-auto" />
+                <RegisterView 
+                  state={cpuState} 
+                  isAssembled={(assemblerResult?.success ?? false) && !isDirty}
+                  isRunning={isRunning}
+                  className="h-full overflow-auto" 
+                />
               )}
             </TabsContent>
 

@@ -127,7 +127,7 @@ export function ExportDialog({
             <>
               <Button
                 variant="default"
-                className="w-full h-auto min-h-[40px] py-2 flex flex-col items-center gap-0 leading-tight"
+                className="w-full h-auto min-h-[40px] py-2 flex flex-col items-center gap-0 leading-tight hover:opacity-90 hover:shadow-md transition-all"
                 onClick={handleFull}
                 disabled={disabled}
               >
@@ -138,15 +138,15 @@ export function ExportDialog({
               </Button>
               <Button
                 variant="secondary"
-                className="w-full"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 text-foreground hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 onClick={handleOnlyTemplate}
                 disabled={disabled}
               >
                 {t('exportDialog.saveTemplateOnly')}
               </Button>
               <Button
-                variant="ghost"
-                className="w-full"
+                variant="outline"
+                className="w-full border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground hover:bg-orange-500 hover:text-white dark:hover:bg-orange-600 dark:hover:text-white transition-colors"
                 onClick={handleClose}
               >
                 {t('exportDialog.cancel')}
@@ -156,15 +156,15 @@ export function ExportDialog({
             <>
               <Button
                 variant="default"
-                className="w-full"
+                className="w-full hover:opacity-90 hover:shadow-md transition-all"
                 onClick={handleFull}
                 disabled={disabled}
               >
                 {t('exportDialog.exportPdf')}
               </Button>
               <Button
-                variant="ghost"
-                className="w-full"
+                variant="outline"
+                className="w-full border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground hover:bg-orange-500 hover:text-white dark:hover:bg-orange-600 dark:hover:text-white transition-colors"
                 onClick={handleClose}
               >
                 {t('exportDialog.cancel')}

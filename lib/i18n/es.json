@@ -99,7 +99,9 @@
     "intOff": "DES",
     "serialIn": "ENT.SERIE",
     "serialOut": "SAL.SERIE",
-    "mask": "MASCARA"
+    "mask": "MASCARA",
+    "assembled": "ENSAMBLADO",
+    "notAssembled": "NO ENSAMBLADO"
   },
   "memoryView": {
     "title": "Memoria",

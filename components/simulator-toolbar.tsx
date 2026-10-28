@@ -174,14 +174,14 @@ export function SimulatorToolbar({
             size="sm"
             onClick={onRun}
             disabled={!isAssembled || isRunning}
-            className="h-8 gap-2"
+            className="h-8 gap-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-foreground"
           >
             <Play className="h-4 w-4" />
             <span className="hidden sm:inline">{t('toolbar.run')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          {t('toolbar.runTooltip')} <Kbd>F5</Kbd>
+          {t('toolbar.runTooltip')} <Kbd>F9</Kbd>
         </TooltipContent>
       </Tooltip>
 
@@ -192,7 +192,7 @@ export function SimulatorToolbar({
             size="sm"
             onClick={onStep}
             disabled={!isAssembled || isRunning}
-            className="h-8 gap-2"
+            className="h-8 gap-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-foreground"
           >
             <SkipForward className="h-4 w-4" />
             <span className="hidden sm:inline">{t('toolbar.step')}</span>
@@ -205,12 +205,12 @@ export function SimulatorToolbar({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
+           <Button
             variant="outline"
             size="sm"
             onClick={onStop}
-            disabled={!isRunning}
-            className="h-8 gap-2"
+            disabled={!isAssembled || !isRunning}
+            className="h-8 gap-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-foreground"
           >
             <Square className="h-4 w-4" />
             <span className="hidden sm:inline">{t('toolbar.stop')}</span>
@@ -229,7 +229,7 @@ export function SimulatorToolbar({
             variant="ghost"
             size="sm"
             onClick={onReset}
-            className="h-8 gap-2 text-destructive hover:text-destructive"
+            className="h-8 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <RotateCcw className="h-4 w-4" />
             <span className="hidden sm:inline">{t('toolbar.reset')}</span>
@@ -249,8 +249,8 @@ export function SimulatorToolbar({
             variant="outline"
             size="sm"
             onClick={onExport}
-            disabled={!isAssembled}
-            className="h-8 gap-2"
+            disabled={!isAssembled || isRunning}
+            className="h-8 gap-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-foreground"
           >
             <FileDown className="h-4 w-4" />
             <span className="hidden sm:inline">{t('toolbar.exportPdf')}</span>

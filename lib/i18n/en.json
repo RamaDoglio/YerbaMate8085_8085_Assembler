@@ -99,6 +99,8 @@
     "intOff": "OFF",
     "serialIn": "SERIAL IN",
     "serialOut": "SERIAL OUT",
+    "assembled": "ASSEMBLED",
+    "notAssembled": "NOT ASSEMBLED",
     "mask": "MASK"
   },
   "memoryView": {
