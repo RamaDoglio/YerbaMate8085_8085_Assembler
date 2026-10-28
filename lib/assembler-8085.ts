@@ -544,41 +544,20 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
     let foundInstruction = false
 
     for (const [key, info] of Object.entries(INSTRUCTIONS)) {
-      if (upperLine === key || upperLine.startsWith(key + ' ') || upperLine.startsWith(key + ',')) {
-        lineToAddress.set(lineNum, currentAddress)
-        currentAddress += info.bytes
-        if (currentAddress > programEnd) programEnd = currentAddress
-        foundInstruction = true
-        break
+      if (upperLine !== key && !upperLine.startsWith(key + ' ') && !upperLine.startsWith(key + ',')) {
+        continue
       }
-    }
 
-    if (!foundInstruction) {
-      // Try matching instruction with operand
-      const parts = normalizedLine.toUpperCase().split(/[,\s]+/)
-      const mnemonic = parts[0]
-      
-      // Check for instructions that take operands
-      const instructionKeys = Object.keys(INSTRUCTIONS).filter(k => k.startsWith(mnemonic + ' ') || k === mnemonic)
-      
-      if (instructionKeys.length > 0) {
-        const info = INSTRUCTIONS[instructionKeys[0]]
-        if (info) {
-          lineToAddress.set(lineNum, currentAddress)
-          currentAddress += info.bytes
-          if (currentAddress > programEnd) programEnd = currentAddress
-          foundInstruction = true
-        }
-      } else {
-        // Check for single-word instructions
-        const info = INSTRUCTIONS[mnemonic]
-        if (info) {
-          lineToAddress.set(lineNum, currentAddress)
-          currentAddress += info.bytes
-          if (currentAddress > programEnd) programEnd = currentAddress
-          foundInstruction = true
-        }
+      const operandStr = upperLine.substring(key.length).replace(/^[,\s]+/, '').trim()
+      if ((info.type === 'move' || info.type === 'simple') && operandStr) {
+        continue
       }
+
+      lineToAddress.set(lineNum, currentAddress)
+      currentAddress += info.bytes
+      if (currentAddress > programEnd) programEnd = currentAddress
+      foundInstruction = true
+      break
     }
 
     if (!foundInstruction && line) {
@@ -682,9 +661,6 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         if (num !== undefined) {
           bytes.push(num & 0xFF)
           bytes.push((num >> 8) & 0xFF)
-        } else {
-          errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidOperand', 'DW', trimmed), type: 'error' })
-          bytes.push(0x00, 0x00)
         }
       }
 
@@ -736,6 +712,10 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       }
 
       const operandStr = upperLine.substring(key.length).replace(/^[,\s]+/, '').trim()
+      if ((info.type === 'move' || info.type === 'simple') && operandStr) {
+        continue
+      }
+
       const bytes = [info.opcode]
       foundInstruction = true
 
