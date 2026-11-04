@@ -244,7 +244,7 @@ export function generatePDF(
   y += 10
 
   // Single combined table: one row per index combining memory + step
-  const regLabels = ['A', 'B', 'C', 'D', 'E', 'H', 'L', 'M']
+  const regLabels = ['A', 'B', 'C', 'D', 'E', 'H', 'L', 'M [HL]']
   const flagLabels = ['Z', 'P', 'S', 'CY']
 
   const traceHead = [
@@ -277,9 +277,11 @@ export function generatePDF(
 
     if (step) {
       const s = step.state
+      const mValueStr = (s.H === 0 && s.L === 0) ? '-' : hex2(step.mValue)
+      
       row.push(
         hex2(s.A), hex2(s.B), hex2(s.C), hex2(s.D),
-        hex2(s.E), hex2(s.H), hex2(s.L), hex2(step.mValue)
+        hex2(s.E), hex2(s.H), hex2(s.L), mValueStr
       )
       row.push(flag(s.flags.Z), flag(s.flags.P), flag(s.flags.S), flag(s.flags.CY))
     } else {
@@ -306,7 +308,7 @@ export function generatePDF(
       7: { cellWidth: 12 },
       8: { cellWidth: 12 },
       9: { cellWidth: 12 },
-      10: { cellWidth: 12 },
+      10: { cellWidth: 16 },
       11: { cellWidth: 10 },
       12: { cellWidth: 10 },
       13: { cellWidth: 10 },
