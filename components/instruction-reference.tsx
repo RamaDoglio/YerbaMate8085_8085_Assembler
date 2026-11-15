@@ -41,68 +41,78 @@ function FlagBadge({ effect }: { effect: FlagEffect }) {
 }
 
 function InstructionRow({ inst, isHighlighted }: { inst: InstructionInfo; isHighlighted: boolean }) {
-  const isDirective = inst.isDirective === true
   return (
     <div className={cn(
-      'grid grid-cols-[120px_80px_40px_40px_1fr] gap-1 rounded px-2 py-1.5 text-xs items-start',
+      'flex flex-col sm:grid sm:grid-cols-[120px_80px_40px_40px_1fr] gap-1 sm:gap-2 rounded px-2 py-2 text-xs sm:items-start border-b border-border/50',
       isHighlighted && 'bg-primary/10'
     )}>
-      <span className="font-mono font-semibold text-[var(--code-instruction)]">{inst.mnemonic}</span>
-      <span className="font-mono text-muted-foreground whitespace-pre-line">{isDirective ? '—' : formatOpcode(inst.opcode)}</span>
-      <span className="font-mono text-muted-foreground text-center">{isDirective ? '—' : inst.bytes}</span>
-      <span className="font-mono text-muted-foreground text-center">{isDirective ? '—' : inst.cycles}</span>
-      <span className="text-muted-foreground leading-tight">{inst.description}</span>
+      <div className="flex flex-wrap items-center gap-2 w-full sm:contents">
+        <span className="font-mono font-semibold text-[var(--code-instruction)] min-w-[80px]">{inst.mnemonic}</span>
+        <span className="font-mono text-muted-foreground">{formatOpcode(inst.opcode)}</span>
+        <span className="font-mono text-[10px] bg-muted px-1.5 rounded sm:bg-transparent sm:px-0 sm:text-xs">{inst.bytes} bytes</span>
+        <span className="font-mono text-[10px] bg-muted px-1.5 rounded sm:bg-transparent sm:px-0 sm:text-xs">{inst.cycles} T</span>
+      </div>
+      <span className="text-muted-foreground leading-tight whitespace-normal break-words w-full">
+        {inst.description}
+      </span>
     </div>
   )
 }
 
 function FlagRow({ inst }: { inst: InstructionInfo }) {
   const { t } = useLanguage()
+  
   if (inst.isDirective) {
     return (
-      <div className="flex items-center gap-1.5 px-2 pb-1.5">
-        <span className="text-[10px] text-muted-foreground ml-2">
+      <div className="flex flex-wrap items-center gap-2 px-2 pb-2 pt-1">
+        <span className="text-[10px] text-muted-foreground">
           {t('instructionReference.modeLabel')} {inst.addressing}
         </span>
         {inst.example && (
-          <span className="text-[10px] text-muted-foreground ml-2 font-mono">
+          <span className="text-[10px] text-muted-foreground font-mono">
             {t('instructionReference.exampleLabel')} {inst.example}
           </span>
         )}
       </div>
     )
   }
+
   return (
-    <div className="flex items-center gap-1.5 px-2 pb-1.5">
-      <span className="text-[10px] text-muted-foreground w-20">{t('instructionReference.flagsLabel')}</span>
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">Z</span>
-        <FlagBadge effect={inst.flags.Z} />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-2 pb-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] text-muted-foreground">{t('instructionReference.flagsLabel')}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">Z</span>
+          <FlagBadge effect={inst.flags.Z} />
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">S</span>
+          <FlagBadge effect={inst.flags.S} />
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">P</span>
+          <FlagBadge effect={inst.flags.P} />
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">CY</span>
+          <FlagBadge effect={inst.flags.CY} />
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-muted-foreground">AC</span>
+          <FlagBadge effect={inst.flags.AC} />
+        </div>
       </div>
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">S</span>
-        <FlagBadge effect={inst.flags.S} />
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">P</span>
-        <FlagBadge effect={inst.flags.P} />
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">CY</span>
-        <FlagBadge effect={inst.flags.CY} />
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">AC</span>
-        <FlagBadge effect={inst.flags.AC} />
-      </div>
-      <span className="text-[10px] text-muted-foreground ml-2">
-        {t('instructionReference.modeLabel')} {inst.addressing}
-      </span>
-      {inst.example && (
-        <span className="text-[10px] text-muted-foreground ml-2 font-mono">
-          {t('instructionReference.exampleLabel')} {inst.example}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] text-muted-foreground">
+          {t('instructionReference.modeLabel')} {inst.addressing}
         </span>
-      )}
+        {inst.example && (
+          <span className="text-[10px] text-muted-foreground font-mono">
+            {t('instructionReference.exampleLabel')} {inst.example}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
@@ -135,20 +145,20 @@ function CategorySection({
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-foreground hover:bg-muted/50 rounded-t-lg"
       >
-        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        <span>{category.name}</span>
-        <span className="text-xs text-muted-foreground font-normal">({category.description})</span>
+        {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+        <span className="flex-1">{category.name}</span>
+        <span className="text-xs text-muted-foreground font-normal hidden sm:inline">({category.description})</span>
       </button>
       {open && (
         <div className="border-t border-border px-1 py-1">
-          {/* Header */}
-          <div className="grid grid-cols-[120px_80px_40px_40px_1fr] gap-1 px-2 py-1 text-[10px] text-muted-foreground font-medium">
+          <div className="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[120px_80px_40px_40px_1fr] gap-2 px-2 py-1 text-[10px] text-muted-foreground font-medium border-b border-border/50 mb-1">
             <span>{t('instructionReference.colInstruction')}</span>
             <span>{t('instructionReference.colOpcode')}</span>
             <span className="text-center">{t('instructionReference.colBytes')}</span>
             <span className="text-center">{t('instructionReference.colCycles')}</span>
-            <span>{t('instructionReference.colDescription')}</span>
+            <span className="hidden sm:block">{t('instructionReference.colDescription')}</span>
           </div>
+
           {displayInstructions.map((inst, i) => (
             <div key={i}>
               <InstructionRow inst={inst} isHighlighted={false} />

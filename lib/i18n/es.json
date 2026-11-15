@@ -36,6 +36,7 @@
     "tabOutput": "Salida",
     "tabIO": "E/S",
     "tabReference": "Referencia",
+    "tabOpcodes": "Opcodes",
     "assembleSuccess": "Ensamblado exitoso",
     "assembleSuccessDesc": "Generados {0} bytes de código máquina",
     "assembleFailed": "Ensamblado fallido",
@@ -52,6 +53,14 @@
     "unnamed": "Sin nombre",
     "sourceTooLarge": "El código excede el tamaño máximo permitido (1 MB).",
     "sourceTooManyLines": "El código excede el máximo de líneas permitido (10.000)."
+  },
+  "opcodesTable": {
+  "title": "Tabla de Opcodes",
+  "searchPlaceholder": "Buscar por instrucción u opcode...",
+  "colMnemonic": "Instrucción",
+  "colOpcode": "Opcode",
+  "colBytes": "Bytes",
+  "emptyState": "No se encontraron instrucciones."
   },
   "exportDialog": {
     "title": "Exportar a PDF",

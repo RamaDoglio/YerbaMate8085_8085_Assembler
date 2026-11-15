@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
 import { useLanguage } from '@/lib/i18n'
+import { OpcodesTable } from '@/components/ui/opcodes-table'
 
 const MAX_SOURCE_BYTES = 1024 * 1024  // 1 MB
 const MAX_SOURCE_LINES = 10_000
@@ -630,6 +631,7 @@ export default function SimulatorPage() {
               <TabsTrigger value="output">{t('page.tabOutput')}</TabsTrigger>
               <TabsTrigger value="io">{t('page.tabIO')}</TabsTrigger>
               <TabsTrigger value="reference">{t('page.tabReference')}</TabsTrigger>
+              <TabsTrigger value="opcodes">{t('page.tabOpcodes')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="registers" className="flex-1 overflow-hidden p-2 mt-0">
@@ -674,6 +676,10 @@ export default function SimulatorPage() {
 
             <TabsContent value="reference" className="flex-1 overflow-hidden p-2 mt-0">
               <InstructionReference className="h-full" />
+            </TabsContent>
+
+            <TabsContent value="opcodes" className="flex-1 overflow-hidden p-2 mt-0">
+              <OpcodesTable className="h-full" />
             </TabsContent>
           </Tabs>
         </div>

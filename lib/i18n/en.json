@@ -36,6 +36,7 @@
     "tabOutput": "Output",
     "tabIO": "I/O",
     "tabReference": "Reference",
+    "tabOpcodes": "Opcodes",
     "assembleSuccess": "Assembly successful",
     "assembleSuccessDesc": "Generated {0} bytes of machine code",
     "assembleFailed": "Assembly failed",
@@ -52,6 +53,14 @@
     "unnamed": "Unnamed",
     "sourceTooLarge": "Source code exceeds the maximum allowed size (1 MB).",
     "sourceTooManyLines": "Source code exceeds the maximum allowed number of lines (10,000)."
+  },
+  "opcodesTable": {
+  "title": "Opcode Table",
+  "searchPlaceholder": "Search by instruction or opcode...",
+  "colMnemonic": "Instruction",
+  "colOpcode": "Opcode",
+  "colBytes": "Bytes",
+  "emptyState": "No instructions found."
   },
   "exportDialog": {
     "title": "Export to PDF",
