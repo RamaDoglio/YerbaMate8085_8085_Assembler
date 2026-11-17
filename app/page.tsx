@@ -14,8 +14,8 @@ import { assemble, type AssemblerResult } from '@/lib/assembler-8085'
 import { CPU8085, type CPUState } from '@/lib/cpu-8085'
 import { getExamples } from '@/lib/examples-8085'
 import { generatePDF, downloadBlob, type ExecutionStep } from '@/lib/pdf-generator'
-import { useToast } from '@/hooks/use-toast'
-import { Toaster } from '@/components/ui/toaster'
+import { toast, Toaster } from 'sonner'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'
@@ -35,7 +35,7 @@ export function validateSourceSize(source: string): SourceSizeError {
 
 export default function SimulatorPage() {
   const { t, locale } = useLanguage()
-  const { toast } = useToast()
+  const isMobile = useIsMobile()
   const cpuRef = useRef<CPU8085 | null>(null)
 
   const [code, setCode] = useState('')
@@ -57,7 +57,6 @@ export default function SimulatorPage() {
   const [isCodeDirty, setIsCodeDirty] = useState(false)
   const [isMemoryDirty, setIsMemoryDirty] = useState(false)
 
-
   const handleCodeChange = useCallback((newCode: string) => {
     setCode(newCode)
     setIsCodeDirty(true)
@@ -75,27 +74,21 @@ export default function SimulatorPage() {
 
   useEffect(() => {
     if (selectedExampleIdx >= 0) {
-      handleCodeChange(getExamples(locale)[selectedExampleIdx].code) // ✅
+      handleCodeChange(getExamples(locale)[selectedExampleIdx].code)
     }
   }, [locale, selectedExampleIdx, handleCodeChange])
 
-    const handleAssemble = useCallback(() => {
+  const handleAssemble = useCallback(() => {
     try {
       const sizeError = validateSourceSize(code)
       if (sizeError) {
-        toast({
-          variant: 'destructive',
-          title: t('page.error'),
-          description:
-            sizeError === 'bytes'
-              ? t('page.sourceTooLarge')
-              : t('page.sourceTooManyLines'),
+        toast.error(t('page.error'), {
+          description: sizeError === 'bytes' ? t('page.sourceTooLarge') : t('page.sourceTooManyLines')
         })
         return
       }
 
       const result = assemble(code, locale)
-
       setAssemblerResult(result)
 
       if (result.success) {
@@ -127,8 +120,7 @@ export default function SimulatorPage() {
           setSnapshotInputPorts({ ...savedInputPorts })
         }
 
-        toast({
-          title: t('page.assembleSuccess'),
+        toast.success(t('page.assembleSuccess'), {
           description: t('page.assembleSuccessDesc', result.machineCode.length),
         })
 
@@ -139,8 +131,7 @@ export default function SimulatorPage() {
           setCurrentLine(currentInstruction.line)
         }
       } else {
-        toast({
-          title: t('page.assembleFailed'),
+        toast.error(t('page.assembleFailed'), {
           description: (
             <>
               {t('page.assembleFailedDesc', result.errors.length)}
@@ -153,31 +144,21 @@ export default function SimulatorPage() {
               </div>
             </>
           ),
-          variant: 'destructive',
+          duration: 8000,
         })
       }
     } catch (err) {
-      // Defensa en profundidad (SEC-01.3): después de 2.2/2.3 assemble() no debería
-      // tirar, pero si algo inesperado se escapa (OOM, bug, RangeError no previsto),
-      // la UI no queda en blanco y el usuario ve un toast en vez de un crash silencioso.
       if (runIntervalRef.current) {
         clearInterval(runIntervalRef.current)
         runIntervalRef.current = null
       }
       setIsRunning(false)
 
-      const detail =
-        err instanceof Error ? `${err.name}: ${err.message}` : String(err)
-
+      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
       console.error('Assemble error (unexpected):', err)
-
-      toast({
-        variant: 'destructive',
-        title: t('page.error'),
-        description: detail,
-      })
+      toast.error(t('page.error'), { description: detail })
     }
-  }, [code, toast, t, locale])
+  }, [code, t, locale])
 
   const updateCurrentLine = useCallback(() => {
     if (!cpuRef.current || !assemblerResult) return
@@ -202,20 +183,15 @@ export default function SimulatorPage() {
     updateCurrentLine()
 
     if (!result.success) {
-      toast({
-        title: t('page.runError'),
-        description: result.error,
-        variant: 'destructive',
-      })
+      toast.error(t('page.runError'), { description: result.error })
     }
 
     if (cpuRef.current.getState().halted) {
-      toast({
-        title: t('page.programHalted'),
+      toast.info(t('page.programHalted'), {
         description: t('page.programHaltedDesc'),
       })
     }
-  }, [assemblerResult, toast, updateCurrentLine, t])
+  }, [assemblerResult, updateCurrentLine, t])
 
   const handleRun = useCallback(() => {
     if (!cpuRef.current || isRunning) return
@@ -239,20 +215,15 @@ export default function SimulatorPage() {
         setIsRunning(false)
 
         if (!result.success) {
-          toast({
-            title: t('page.runError'),
-            description: result.error,
-            variant: 'destructive',
-          })
+          toast.error(t('page.runError'), { description: result.error })
         } else {
-          toast({
-            title: t('page.programHalted'),
+          toast.info(t('page.programHalted'), {
             description: t('page.executionComplete'),
           })
         }
       }
     }, 50)
-  }, [isRunning, toast, updateCurrentLine, t])
+  }, [isRunning, updateCurrentLine, t])
 
   const handleStop = useCallback(() => {
     if (runIntervalRef.current) {
@@ -277,7 +248,6 @@ export default function SimulatorPage() {
         }
       }
 
-      // Restaurar puertos de entrada del snapshot del último ensamblado
       if (snapshotInputPorts) {
         for (const [port, value] of Object.entries(snapshotInputPorts)) {
           cpuRef.current.setInputPort(Number(port), value)
@@ -302,7 +272,6 @@ export default function SimulatorPage() {
       setCpuState(cpuRef.current.getState())
     }
   }, [])
-
 
   const handleMemoryChange = useCallback((address: number, value: number) => {
     if (cpuRef.current) {
@@ -452,12 +421,12 @@ export default function SimulatorPage() {
       const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
       await downloadBlob(blob, `Plantilla_${safeName}.pdf`)
       setDialogOpen(false)
-      toast({ title: t('page.exported'), description: t('page.templateGenerated') })
+      toast.success(t('page.exported'), { description: t('page.templateGenerated') })
     } catch (e) {
       console.error('Export error (template only):', e)
-      toast({ title: t('page.error'), description: t('page.templateFailed'), variant: 'destructive' })
+      toast.error(t('page.error'), { description: t('page.templateFailed') })
     }
-  }, [assemblerResult, studentName, exerciseNum, toast, t, locale])
+  }, [assemblerResult, studentName, exerciseNum, t, locale])
 
   const handleExportFull = useCallback(async () => {
     if (!assemblerResult?.success || !cpuRef.current) return
@@ -476,11 +445,11 @@ export default function SimulatorPage() {
       const safeName = studentName.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑäëïöüÄËÏÖÜ-]/g, '')
       await downloadBlob(blob, `Prueba_Escritorio_${safeName}.pdf`)
       setDialogOpen(false)
-      toast({ title: t('page.exported'), description: t('page.pdfGenerated') })
+      toast.success(t('page.exported'), { description: t('page.pdfGenerated') })
     } catch (e) {
       console.error('Export error (full):', e)
     }
-  }, [assemblerResult, studentName, exerciseNum, buildExecutionSteps, toast, t, locale])
+  }, [assemblerResult, studentName, exerciseNum, buildExecutionSteps, t, locale])
 
   const handleLoad = useCallback(async () => {
     try {
@@ -494,26 +463,17 @@ export default function SimulatorPage() {
 
       const sizeError = validateSourceSize(content)
       if (sizeError) {
-        toast({
-          variant: 'destructive',
-          title: t('page.error'),
-          description:
-            sizeError === 'bytes'
-              ? t('page.sourceTooLarge')
-              : t('page.sourceTooManyLines'),
+        toast.error(t('page.error'), {
+          description: sizeError === 'bytes' ? t('page.sourceTooLarge') : t('page.sourceTooManyLines')
         })
         return
       }
 
       handleCodeChange(content)
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: t('page.error'),
-        description: err instanceof Error ? err.message : String(err),
-      })
+      toast.error(t('page.error'), { description: err instanceof Error ? err.message : String(err) })
     }
-  }, [toast, t, handleCodeChange])
+  }, [t, handleCodeChange])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -625,7 +585,7 @@ export default function SimulatorPage() {
 
         <div className="flex w-full lg:w-1/2 flex-col">
           <Tabs defaultValue="registers" className="flex h-full flex-col">
-            <TabsList className="mx-2 mt-2 grid w-auto grid-cols-5 overflow-x-auto">
+            <TabsList className="mx-2 mt-2 grid w-auto grid-cols-3 sm:grid-cols-6 h-auto overflow-x-auto">
               <TabsTrigger value="registers">{t('page.tabRegisters')}</TabsTrigger>
               <TabsTrigger value="memory">{t('page.tabMemory')}</TabsTrigger>
               <TabsTrigger value="output">{t('page.tabOutput')}</TabsTrigger>
@@ -685,7 +645,12 @@ export default function SimulatorPage() {
         </div>
       </div>
 
-      <Toaster />
+      <Toaster 
+        position={isMobile ? "top-center" : "bottom-right"} 
+        richColors 
+        closeButton 
+        swipeDirections={['top', 'bottom', 'left', 'right']} 
+      />
     </div>
   )
 }
