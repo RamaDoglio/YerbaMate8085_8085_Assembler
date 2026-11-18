@@ -202,6 +202,7 @@
     "missingOperand": "Falta el operando en la instrucción {0}",
     "invalidOperand": "Operando inválido en {0}: \"{1}\"",
     "sizeOutOfRange": "Tamaño fuera de rango en {0} (permitido: {1})",
+    "valueOutOfRange": "El valor {0} está fuera del rango permitido ({1})",
     "exceedsMemory": "La directiva ocupa {0} bytes y excede la memoria desde {1}"
   },
   "examples": {

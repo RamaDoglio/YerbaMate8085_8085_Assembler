@@ -120,7 +120,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
             currentLine === i && 'bg-primary/20 text-primary font-medium'
           )}
         >
-          {i.toString(16).toUpperCase()}
+          {i.toString(16).toUpperCase().padStart(4, '0')}
         </div>
       )),
     [lineCount, currentLine]
@@ -152,7 +152,6 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
       const newValue = value.substring(0, start) + '  ' + value.substring(end)
       onChange(newValue)
       
-      // Set cursor position after tab
       requestAnimationFrame(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2
@@ -167,9 +166,10 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
       <div
         ref={lineNumbersRef}
         className="flex-shrink-0 overflow-hidden bg-muted/30 py-3 text-right font-mono text-sm text-muted-foreground select-none"
-        style={{ width: '3.5rem' }}
+        style={{ width: '4.5rem' }}
       >
         {lineNumbers}
+        <div className="h-[50vh]" />
       </div>
 
       {/* Editor area */}
@@ -177,7 +177,8 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
         {/* Syntax highlighted overlay */}
         <div
           ref={highlightRef}
-          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-all p-3 font-mono text-sm leading-6"
+          // Agregamos pb-[50vh] para que haya espacio de scroll extra
+          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-all p-3 pb-[50vh] font-mono text-sm leading-6"
           aria-hidden="true"
         >
           {highlightedLines.map((nodes, i) => (
@@ -193,13 +194,12 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
           ))}
         </div>
 
-        {/* Actual textarea */}
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="absolute inset-0 h-full w-full resize-none bg-transparent p-3 font-mono text-sm leading-6 text-transparent caret-foreground outline-none"
+          className="absolute inset-0 h-full w-full resize-none bg-transparent p-3 pb-[50vh] font-mono text-sm leading-6 text-transparent caret-foreground outline-none"
           spellCheck={false}
           autoCapitalize="off"
           autoComplete="off"

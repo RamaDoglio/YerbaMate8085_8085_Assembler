@@ -332,19 +332,15 @@ function parseNumber(str: string): number | null {
   const v = str.trim().toUpperCase()
   if (v.length === 0) return null
 
-  // Hex con sufijo H: FFH, 0FFH (pero NO 0XFFH, que es inválido)
   if (/^[0-9A-F]+H$/.test(v)) {
     return parseInt(v.slice(0, -1), 16)
   }
-  // Hex con prefijo 0X: 0xFF, 0XFF
   if (/^0X[0-9A-F]+$/.test(v)) {
     return parseInt(v.slice(2), 16)
   }
-  // Binario con sufijo B: 1010B
   if (/^[01]+B$/.test(v)) {
     return parseInt(v.slice(0, -1), 2)
   }
-  // Decimal puro (sin letras ni sufijos)
   if (/^[0-9]+$/.test(v)) {
     return parseInt(v, 10)
   }
@@ -355,8 +351,7 @@ function parseNumber(str: string): number | null {
 /**
  * Valida que un tamaño de directiva (DS/DB/DW) sea un entero
  * en el rango permitido y que no desborde la memoria desde
- * currentAddress. Devuelve el número o null si hay error
- * (y ya pushea el error al array).
+ * currentAddress. Devuelve el número o null si hay error.
  */
 export function validateSizeDirective(
   raw: string,
@@ -629,7 +624,12 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         } else {
           const num = parseNumber(trimmed) ?? symbols.get(trimmed.toUpperCase())
           if (num !== undefined) {
-            bytes.push(num & 0xFF)
+            if (num < 0 || num > 0xFF) {
+              errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', trimmed, '8 bits (0..255)'), type: 'error' })
+              bytes.push(0)
+            } else {
+              bytes.push(num & 0xFF)
+            }
           }
         }
       }
@@ -659,8 +659,13 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         const trimmed = val.trim()
         const num = parseNumber(trimmed) ?? symbols.get(trimmed.toUpperCase())
         if (num !== undefined) {
-          bytes.push(num & 0xFF)
-          bytes.push((num >> 8) & 0xFF)
+          if (num < 0 || num > 0xFFFF) {
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', trimmed, '16 bits (0..65535)'), type: 'error' })
+            bytes.push(0, 0)
+          } else {
+            bytes.push(num & 0xFF)
+            bytes.push((num >> 8) & 0xFF)
+          }
         }
       }
 
@@ -725,7 +730,12 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
       } else if (info.type === 'immediate') {
         const value = parseNumber(operandStr) ?? symbols.get(operandStr)
         if (value !== undefined) {
-          bytes.push(value & 0xFF)
+          if (value < 0 || value > 0xFF) {
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', operandStr, '8 bits (0..255)'), type: 'error' })
+            bytes.push(0)
+          } else {
+            bytes.push(value & 0xFF)
+          }
         } else {
           errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidImmediate', operandStr), type: 'error' })
           bytes.push(0)
@@ -743,8 +753,13 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
           value = undefined
         }
         if (value !== undefined) {
-          bytes.push(value & 0xFF)
-          bytes.push((value >> 8) & 0xFF)
+          if (value < 0 || value > 0xFFFF) {
+            errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', operandStr, '16 bits (0..65535)'), type: 'error' })
+            bytes.push(0, 0)
+          } else {
+            bytes.push(value & 0xFF)
+            bytes.push((value >> 8) & 0xFF)
+          }
         } else {
           errors.push({ line: lineNum, message: translate(locale, 'assembler.invalidAddress', operandStr), type: 'error' })
           bytes.push(0, 0)
@@ -782,7 +797,12 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
         } else if (info.type === 'immediate' && operand) {
           const value = parseNumber(operand) ?? symbols.get(operand)
           if (value !== undefined) {
-            bytes.push(value & 0xFF)
+            if (value < 0 || value > 0xFF) {
+              errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', operand, '8 bits (0..255)'), type: 'error' })
+              bytes.push(0)
+            } else {
+              bytes.push(value & 0xFF)
+            }
           } else {
             bytes.push(0)
           }
@@ -799,8 +819,13 @@ export function assemble(sourceCode: string, locale: Locale = 'es'): AssemblerRe
             value = undefined
           }
           if (value !== undefined) {
-            bytes.push(value & 0xFF)
-            bytes.push((value >> 8) & 0xFF)
+            if (value < 0 || value > 0xFFFF) {
+              errors.push({ line: lineNum, message: translate(locale, 'assembler.valueOutOfRange', operand, '16 bits (0..65535)'), type: 'error' })
+              bytes.push(0, 0)
+            } else {
+              bytes.push(value & 0xFF)
+              bytes.push((value >> 8) & 0xFF)
+            }
           } else {
             bytes.push(0, 0)
           }

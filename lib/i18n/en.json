@@ -202,7 +202,8 @@
     "missingOperand": "Missing operand for instruction {0}",
     "invalidOperand": "Invalid operand for {0}: \"{1}\"",
     "sizeOutOfRange": "Size out of range for {0} (allowed: {1})",
-    "exceedsMemory": "Directive uses {0} bytes and overflows memory from {1}"
+    "exceedsMemory": "Directive uses {0} bytes and overflows memory from {1}",
+    "valueOutOfRange": "Value {0} is out of the allowed range ({1})"
   },
   "examples": {
     "basicArithmetic": "Basic Arithmetic",
