@@ -152,6 +152,7 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
       const newValue = value.substring(0, start) + '  ' + value.substring(end)
       onChange(newValue)
       
+      // Set cursor position after tab
       requestAnimationFrame(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2
@@ -162,7 +163,6 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
 
   return (
     <div className={cn('relative flex h-full overflow-hidden rounded-lg border border-border bg-card', className)}>
-      {/* Line numbers */}
       <div
         ref={lineNumbersRef}
         className="flex-shrink-0 overflow-hidden bg-muted/30 py-3 text-right font-mono text-sm text-muted-foreground select-none"
@@ -172,13 +172,10 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
         <div className="h-[50vh]" />
       </div>
 
-      {/* Editor area */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Syntax highlighted overlay */}
         <div
           ref={highlightRef}
-          // Agregamos pb-[50vh] para que haya espacio de scroll extra
-          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-all p-3 pb-[50vh] font-mono text-sm leading-6"
+          className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre p-3 pb-[50vh] font-mono text-sm leading-6"
           aria-hidden="true"
         >
           {highlightedLines.map((nodes, i) => (
@@ -199,7 +196,8 @@ export function CodeEditor({ value, onChange, className, currentLine }: CodeEdit
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="absolute inset-0 h-full w-full resize-none bg-transparent p-3 pb-[50vh] font-mono text-sm leading-6 text-transparent caret-foreground outline-none"
+          wrap="off"
+          className="absolute inset-0 h-full w-full resize-none bg-transparent p-3 pb-[50vh] font-mono text-sm leading-6 text-transparent caret-foreground outline-none overflow-x-auto"
           spellCheck={false}
           autoCapitalize="off"
           autoComplete="off"
