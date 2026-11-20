@@ -130,14 +130,14 @@ SUMAR_VALORES:
 
 ORG 0000H
 
-    MVI A, 0F0H ; Cargar 11110000b
+    MVI A, F0H ; Cargar 11110000b
 
     ANA A       ; A = A AND A (sin cambio, pone banderas)
-    CMA         ; A = NOT A = 0F0Fh
+    CMA         ; A = NOT A = 0Fh (complemento a 1)
     STA 2000H   ; Almacenar resultado
 
-    MVI A, 0F0H
-    ORI 0FH     ; A = 0FFh
+    MVI A, F0H
+    ORI 0FH     ; A = FFh
 
     MVI B, 55H  ; 01010101b
     MVI A, 0AAH ; 10101010b
@@ -214,7 +214,7 @@ LOOP_COPIA:
 ; Datos de origen
 ORG 2000H
     DB 10H, 20H, 30H, 40H, 50H, 60H, 70H, 80H
-    DB 90H, 0A0H, 0B0H, 0C0H, 0D0H, 0E0H, 0F0H, 0FFH
+    DB 90H, A0H, B0H, C0H, D0H, E0H, F0H, FFH
 `,
   },
   {
@@ -231,7 +231,7 @@ ORG 0000H
     DAD B        ; HL = 5555h
 
     ; Sumar DE a HL
-    LXI D, 0ABCDH ; DE = ABCDh
+    LXI D, ABCDH ; DE = ABCDh
     DAD D         ; HL = 5555h + ABCDh = 10022h -> 0022h, CY=1
 
     ; Incremento/decremento de 16 bits (no afecta banderas)
@@ -291,7 +291,7 @@ ORG 0000H
     CPI 00H
     CNZ NO_CERO  ; NO llamada (A es cero)
 
-    MVI A, 0FFH
+    MVI A, FFH
     CPI 0AAH
     CC HAY_ACARREO  ; Llamada si A < 0AAh (CY=1)
     CNC SIN_ACARREO ; NO llamada
@@ -475,14 +475,14 @@ LOOP:
 
     ; Check if result is zero
     CPI 00H
-    JZ CERO
+    JZ ZERO
     MVI A, 01H  ; Not zero
-    JMP FIN
+    JMP END
 
-CERO:
+ZERO:
     MVI A, 00H
 
-FIN:
+END:
     STA 3001H
 
     HLT
@@ -502,12 +502,12 @@ ORG 0000H
     MVI B, 20H
     MVI C, 30H
 
-    CALL SUMAR_VALORES ; Call subroutine
+    CALL ADD_VALUES ; Call subroutine
 
     HLT
 
 ; Subroutine: sum registers and store
-SUMAR_VALORES:
+ADD_VALUES:
     PUSH B      ; Save BC on stack
     PUSH PSW    ; Save A and flags
 
@@ -528,14 +528,14 @@ SUMAR_VALORES:
 
 ORG 0000H
 
-    MVI A, 0F0H ; Load 11110000b
+    MVI A, F0H ; Load 11110000b
 
     ANA A       ; A = A AND A (no change, sets flags)
-    CMA         ; A = NOT A = 0F0Fh
+    CMA         ; A = NOT A = 0Fh (one's complement)
     STA 2000H   ; Store result
 
-    MVI A, 0F0H
-    ORI 0FH     ; A = 0FFh
+    MVI A, F0H
+    ORI 0FH     ; A = FFh
 
     MVI B, 55H  ; 01010101b
     MVI A, 0AAH ; 10101010b
@@ -599,20 +599,20 @@ ORG 0000H
     LXI D, 3000H ; Destination address
     MVI C, 10H   ; Counter = 16 bytes
 
-LOOP_COPIA:
+COPY_LOOP:
     MOV A, M     ; Read from source
     STAX D       ; Write to destination
     INX H        ; Advance source
     INX D        ; Advance destination
     DCR C        ; Decrement counter
-    JNZ LOOP_COPIA ; Repeat until done
+    JNZ COPY_LOOP ; Repeat until done
 
     HLT
 
 ; Source data
 ORG 2000H
     DB 10H, 20H, 30H, 40H, 50H, 60H, 70H, 80H
-    DB 90H, 0A0H, 0B0H, 0C0H, 0D0H, 0E0H, 0F0H, 0FFH
+    DB 90H, A0H, B0H, C0H, D0H, E0H, F0H, FFH
 `,
   },
   {
@@ -629,7 +629,7 @@ ORG 0000H
     DAD B        ; HL = 5555h
 
     ; Add DE to HL
-    LXI D, 0ABCDH ; DE = ABCDh
+    LXI D, ABCDH ; DE = ABCDh
     DAD D         ; HL = 5555h + ABCDh = 10022h -> 0022h, CY=1
 
     ; 16-bit increment/decrement (does not affect flags)
@@ -652,22 +652,22 @@ ORG 0000H
 
 ORG 0000H
 
-    LXI H, MENSAJE  ; HL points to the string
+    LXI H, MESSAGE  ; HL points to the string
     LXI D, 6000H    ; Destination buffer
 
-COPIAR_CAD:
+COPY_STR:
     MOV A, M      ; Load character
     CPI 00H       ; Check null terminator
-    JZ FIN
+    JZ END
     STAX D
     INX H
     INX D
-    JMP COPIAR_CAD
+    JMP COPY_STR
 
-FIN:
+END:
     HLT
 
-MENSAJE:
+MESSAGE:
     DB "HELLO 8085!", 00H
 `,
   },
@@ -683,119 +683,113 @@ ORG 0000H
 
     MVI A, 05H
     CPI 05H
-    CZ ENCONTRADO_CERO ; Call if A == 5
+    CZ FOUND_ZERO ; Call if A == 5
 
     MVI A, 00H
     CPI 00H
-    CNZ NO_CERO  ; NO call (A is zero)
+    CNZ NOT_ZERO  ; NO call (A is zero)
 
-    MVI A, 0FFH
+    MVI A, FFH
     CPI 0AAH
-    CC HAY_ACARREO  ; Call if A < 0AAh (CY=1)
-    CNC SIN_ACARREO ; NO call
+    CC HAS_CARRY  ; Call if A < 0AAh (CY=1)
+    CNC NO_CARRY ; NO call
 
     HLT
 
-ENCONTRADO_CERO:
+FOUND_ZERO:
     MVI B, 01H
     RET
 
-NO_CERO:
+NOT_ZERO:
     MVI B, 02H
     RET
 
-HAY_ACARREO:
+HAS_CARRY:
     MVI B, 03H
     RET
 
-SIN_ACARREO:
+NO_CARRY:
     MVI B, 04H
     RET
 `,
   },
-    {
+        {
     name: 'Hello World (I/O)',
-    description: 'Writes "Hola Mundo! Soy un Ensamblador de 8085" letter by letter to different ports to display it in the ASCII table.',
+    description: 'Writes "Hello World! I am an 8085 Assembler" letter by letter to different ports to display it in the ASCII table.',
     code: `ORG 0000H
-; Writes the phrase letter by letter to ports 01H through 26H
+; Writes the phrase letter by letter to ports 01H through 23H
 ; so the ASCII table displays the complete text.
 
-MVI A, 48H
+MVI A, 48H  ; H
 OUT 01H
-MVI A, 6FH
+MVI A, 65H  ; e
 OUT 02H
-MVI A, 6CH
+MVI A, 6CH  ; l
 OUT 03H
-MVI A, 61H
+MVI A, 6CH  ; l
 OUT 04H
-MVI A, 20H
+MVI A, 6FH  ; o
 OUT 05H
-MVI A, 4DH
+MVI A, 20H  ; space
 OUT 06H
-MVI A, 75H
+MVI A, 57H  ; W
 OUT 07H
-MVI A, 6EH
+MVI A, 6FH  ; o
 OUT 08H
-MVI A, 64H
+MVI A, 72H  ; r
 OUT 09H
-MVI A, 6FH
+MVI A, 6CH  ; l
 OUT 0AH
-MVI A, 21H
+MVI A, 64H  ; d
 OUT 0BH
-MVI A, 20H
+MVI A, 21H  ; !
 OUT 0CH
-MVI A, 53H
+MVI A, 20H  ; space
 OUT 0DH
-MVI A, 6FH
+MVI A, 49H  ; I
 OUT 0EH
-MVI A, 79H
+MVI A, 20H  ; space
 OUT 0FH
-MVI A, 20H
+MVI A, 61H  ; a
 OUT 10H
-MVI A, 75H
+MVI A, 6DH  ; m
 OUT 11H
-MVI A, 6EH
+MVI A, 20H  ; space
 OUT 12H
-MVI A, 20H
+MVI A, 61H  ; a
 OUT 13H
-MVI A, 45H
+MVI A, 6EH  ; n
 OUT 14H
-MVI A, 6EH
+MVI A, 20H  ; space
 OUT 15H
-MVI A, 73H
+MVI A, 38H  ; 8
 OUT 16H
-MVI A, 61H
+MVI A, 30H  ; 0
 OUT 17H
-MVI A, 6DH
+MVI A, 38H  ; 8
 OUT 18H
-MVI A, 62H
+MVI A, 35H  ; 5
 OUT 19H
-MVI A, 6CH
+MVI A, 20H  ; space
 OUT 1AH
-MVI A, 61H
+MVI A, 41H  ; A
 OUT 1BH
-MVI A, 64H
+MVI A, 73H  ; s
 OUT 1CH
-MVI A, 6FH
+MVI A, 73H  ; s
 OUT 1DH
-MVI A, 72H
+MVI A, 65H  ; e
 OUT 1EH
-MVI A, 20H
+MVI A, 6DH  ; m
 OUT 1FH
-MVI A, 64H
+MVI A, 62H  ; b
 OUT 20H
-MVI A, 65H
+MVI A, 6CH  ; l
 OUT 21H
-MVI A, 20H
+MVI A, 65H  ; e
 OUT 22H
-MVI A, 38H
+MVI A, 72H  ; r
 OUT 23H
-MVI A, 30H
-OUT 24H
-MVI A, 38H
-OUT 25H
-MVI A, 35H
-OUT 26H
 HLT`,
   },
 ]
